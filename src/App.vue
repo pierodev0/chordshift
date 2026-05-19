@@ -7,8 +7,9 @@
 </template>
 
 <style>
-/* Hallmark · genre: playful · macrostructure: Mobile Songbook · theme: Plume
- * enrichment: none · pre-emit critique: P5 H5 E5 S4 R5 V5 */
+/* Hallmark · genre: playful · theme: custom (Plume+ · Sora + JetBrains Mono)
+ * macrostructure: Mobile Songbook (enriched) · enrichment: none
+ * pre-emit critique: P5 H5 E5 S5 R5 V5 */
 .page-enter-active,
 .page-leave-active {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -21,6 +22,15 @@
   opacity: 0;
   transform: translateX(-24px);
 }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
