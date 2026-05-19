@@ -40,11 +40,33 @@
         </svg>
       </button>
 
+      <button
+        v-if="sections.length > 0"
+        class="fixed bottom-6 left-6 w-14 h-14 rounded-full bg-white border border-border text-ink shadow-xl transition-all duration-200 hover:bg-surface hover:shadow-md active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
+        @click="showSectionSheet = true"
+        aria-label="Secciones"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
+
       <TransposeSheet
         :show="showSheet"
         :keyText="keyText"
         @close="showSheet = false"
         @transpose="changeTranspose"
+      />
+
+      <SectionNavSheet
+        v-if="sections.length > 0"
+        :show="showSectionSheet"
+        :sections="sections"
+        :visibility="sectionVisibility"
+        @close="showSectionSheet = false"
+        @toggle="toggleSection"
+        @toggleAll="toggleAllSections"
       />
     </template>
 
@@ -55,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { useChordTransposer } from '../composables/useChordTransposer'
@@ -63,6 +85,7 @@ import AppPageHeader from '../components/AppPageHeader.vue'
 import AppIconButton from '../components/AppIconButton.vue'
 import ChordLegend from '../components/ChordLegend.vue'
 import TransposeSheet from '../components/TransposeSheet.vue'
+import SectionNavSheet from '../components/SectionNavSheet.vue'
 
 const { chordRegex, isChordLine, transposeNote, escapeHTML } = useChordTransposer()
 
@@ -71,9 +94,57 @@ const router = useRouter()
 const store = useSongsStore()
 
 const showSheet = ref(false)
+const showSectionSheet = ref(false)
 const currentStep = ref(0)
+const sectionVisibility = ref({})
 
 const song = computed(() => store.getById(route.params.id))
+
+const sections = computed(() => {
+  if (!song.value) return []
+  const lines = song.value.content.split('\n')
+  const result = []
+  let currentLabel = 'Intro'
+  let start = 0
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(/^\[(.+)\]$/)
+    if (match) {
+      if (i > start) {
+        result.push({ id: `sec-${result.length}`, label: currentLabel, start, count: i - start })
+      }
+      currentLabel = match[1]
+      start = i
+    }
+  }
+  if (lines.length > start) {
+    result.push({ id: `sec-${result.length}`, label: currentLabel, start, count: lines.length - start })
+  }
+
+  return result
+})
+
+watch(sections, (secs) => {
+  const vis = { ...sectionVisibility.value }
+  for (const sec of secs) {
+    if (vis[sec.id] === undefined) vis[sec.id] = true
+  }
+  sectionVisibility.value = vis
+}, { immediate: true })
+
+const visibleLineRanges = computed(() => {
+  const ranges = []
+  for (const sec of sections.value) {
+    if (sectionVisibility.value[sec.id] !== false) {
+      ranges.push({ start: sec.start, end: sec.start + sec.count })
+    }
+  }
+  return ranges
+})
+
+function lineIsVisible(lineIdx) {
+  return visibleLineRanges.value.some((r) => lineIdx >= r.start && lineIdx < r.end)
+}
 
 const keyText = computed(() =>
   currentStep.value === 0
@@ -84,16 +155,25 @@ const keyText = computed(() =>
 const renderedHtml = computed(() => {
   if (!song.value) return ''
   const lines = song.value.content.split('\n')
-  const rendered = lines.map((line) => {
+  const rendered = []
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!lineIsVisible(i)) continue
+
+    const line = lines[i]
     if (isChordLine(line)) {
-      return line.replace(chordRegex, (match, root, bass) => {
-        const transRoot = transposeNote(root, currentStep.value)
-        const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
-        return `<strong>${transRoot}${transBass}</strong>`
-      })
+      rendered.push(
+        line.replace(chordRegex, (match, root, bass) => {
+          const transRoot = transposeNote(root, currentStep.value)
+          const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
+          return `<strong>${transRoot}${transBass}</strong>`
+        }),
+      )
+    } else {
+      rendered.push(escapeHTML(line))
     }
-    return escapeHTML(line)
-  })
+  }
+
   return rendered.join('\n')
 })
 
@@ -115,6 +195,19 @@ const chords = computed(() => {
 
 function changeTranspose(delta) {
   currentStep.value += delta
+}
+
+function toggleSection(id) {
+  sectionVisibility.value = { ...sectionVisibility.value, [id]: !sectionVisibility.value[id] }
+}
+
+function toggleAllSections(currentlyAllVisible) {
+  const newVal = !currentlyAllVisible
+  const vis = {}
+  for (const sec of sections.value) {
+    vis[sec.id] = newVal
+  }
+  sectionVisibility.value = vis
 }
 
 onMounted(() => {
