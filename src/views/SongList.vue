@@ -6,21 +6,14 @@
     </header>
 
     <div class="px-4 pt-3 pb-2">
-      <div class="relative">
-        <svg
-          class="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-subtle pointer-events-none"
-          width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
-        <input
-          v-model="query"
-          type="search"
-          placeholder="Buscar canciones..."
-          class="w-full pl-9 pr-4 py-3 rounded-xl border border-border bg-white text-sm text-ink outline-none transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/15 placeholder:text-ink-subtle"
-        />
-      </div>
+      <AppInput v-model="query" type="search" placeholder="Buscar canciones...">
+        <template #icon>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+        </template>
+      </AppInput>
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 pb-28">
@@ -55,6 +48,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useSongsStore } from '../stores/songsStore'
+import AppInput from '../components/AppInput.vue'
 import SongCard from '../components/SongCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 

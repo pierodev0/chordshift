@@ -12,14 +12,12 @@
     <p class="text-ink-soft text-sm mb-7 max-w-[260px] leading-relaxed">
       Agregá tu primera canción y empezá a practicar con los acordes transportados al tono que quieras.
     </p>
-    <button
-      class="px-7 py-3.5 rounded-xl font-semibold bg-accent text-white border-none transition-all duration-200 hover:bg-accent-hover active:scale-95 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none cursor-pointer shadow-lg shadow-accent/25"
-      @click="$router.push({ name: 'song-new' })"
-    >
+    <AppButton shadow @click="$router.push({ name: 'song-new' })">
       Agregar canción
-    </button>
+    </AppButton>
   </div>
 </template>
 
 <script setup>
+import AppButton from './AppButton.vue'
 </script>

@@ -1,27 +1,18 @@
 <template>
   <div class="h-dvh flex flex-col bg-paper">
-    <header class="flex items-center gap-3 px-4 py-3.5 bg-white/80 backdrop-blur-sm border-b border-border shrink-0">
-      <button
-        class="w-9 h-9 rounded-xl hover:bg-accent-subtle transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none flex items-center justify-center -ml-1"
-        @click="router.push({ name: 'home' })"
-        aria-label="Volver"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-ink">
-          <path d="M19 12H5m7 7-7-7 7-7" />
-        </svg>
-      </button>
-      <span class="text-sm font-semibold text-ink flex-1">Canción</span>
-      <button
-        v-if="song"
-        class="w-9 h-9 rounded-xl hover:bg-accent-subtle transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none flex items-center justify-center"
-        @click="router.push({ name: 'song-edit', params: { id: song.id } })"
-        aria-label="Editar"
-      >
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-soft">
-          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-        </svg>
-      </button>
-    </header>
+    <AppPageHeader title="Canción" @back="router.push({ name: 'home' })">
+      <template #actions>
+        <AppIconButton
+          v-if="song"
+          @click="router.push({ name: 'song-edit', params: { id: song.id } })"
+          aria-label="Editar"
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-soft">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+          </svg>
+        </AppIconButton>
+      </template>
+    </AppPageHeader>
 
     <template v-if="song">
       <div :class="coverColor" class="px-4 py-6 flex flex-col items-center text-center -mt-px">
@@ -56,6 +47,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { useChordTransposer } from '../composables/useChordTransposer'
+import AppPageHeader from '../components/AppPageHeader.vue'
+import AppIconButton from '../components/AppIconButton.vue'
 import TransposeBar from '../components/TransposeBar.vue'
 import ChordLegend from '../components/ChordLegend.vue'
 

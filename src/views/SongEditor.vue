@@ -1,47 +1,25 @@
 <template>
   <div class="h-dvh flex flex-col bg-paper">
-    <header class="flex items-center gap-3 px-4 py-3.5 bg-white/80 backdrop-blur-sm border-b border-border shrink-0">
-      <button
-        class="w-9 h-9 rounded-xl hover:bg-accent-subtle transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none flex items-center justify-center -ml-1"
-        @click="goBack"
-        aria-label="Volver"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-ink">
-          <path d="M19 12H5m7 7-7-7 7-7" />
-        </svg>
-      </button>
-      <h1 class="text-sm font-semibold text-ink truncate">
-        {{ isEdit ? 'Editar canción' : 'Nueva canción' }}
-      </h1>
-    </header>
+    <AppPageHeader :title="isEdit ? 'Editar canción' : 'Nueva canción'" @back="goBack" />
 
     <div class="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-5">
-      <div>
-        <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Título</label>
-        <input
-          v-model="title"
-          type="text"
-          placeholder="Título de la canción"
-          class="w-full px-4 py-3 rounded-xl border border-border bg-white text-sm text-ink outline-none transition-all duration-200 focus:border-accent focus:ring-3 focus:ring-accent/10 placeholder:text-ink-subtle"
-        />
-      </div>
-
-      <div>
-        <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Artista</label>
-        <input
-          v-model="artist"
-          type="text"
-          placeholder="Nombre del artista"
-          class="w-full px-4 py-3 rounded-xl border border-border bg-white text-sm text-ink outline-none transition-all duration-200 focus:border-accent focus:ring-3 focus:ring-accent/10 placeholder:text-ink-subtle"
-        />
-      </div>
+      <AppInput
+        v-model="title"
+        label="Título"
+        placeholder="Título de la canción"
+      />
+      <AppInput
+        v-model="artist"
+        label="Artista"
+        placeholder="Nombre del artista"
+      />
 
       <div class="flex-1 flex flex-col min-h-0">
         <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Letra y acordes</label>
         <textarea
           v-model="content"
           spellcheck="false"
-          class="flex-1 min-h-[200px] w-full p-4 rounded-xl border border-border bg-white font-mono text-sm text-ink outline-none resize-none transition-all duration-200 focus:border-accent focus:ring-3 focus:ring-accent/10 placeholder:text-ink-subtle"
+          class="flex-1 min-h-[200px] w-full p-4 rounded-xl border border-border bg-white font-mono text-sm text-ink outline-none resize-none transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/15 placeholder:text-ink-subtle"
           placeholder="Pegá la letra con acordes. Ejemplo:
 Fmaj7          Cadd9
 Tanto tiempo disfrutamos..."
@@ -50,13 +28,15 @@ Tanto tiempo disfrutamos..."
     </div>
 
     <div class="px-4 py-3 border-t border-border bg-white shrink-0">
-      <button
-        class="w-full py-3.5 rounded-xl font-semibold bg-accent text-white border-none transition-all duration-200 hover:bg-accent-hover active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-accent/25"
+      <AppButton
+        full
+        size="lg"
+        shadow
         :disabled="!title.trim()"
         @click="save"
       >
         Guardar
-      </button>
+      </AppButton>
     </div>
   </div>
 </template>
@@ -65,6 +45,9 @@ Tanto tiempo disfrutamos..."
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
+import AppPageHeader from '../components/AppPageHeader.vue'
+import AppInput from '../components/AppInput.vue'
+import AppButton from '../components/AppButton.vue'
 
 const route = useRoute()
 const router = useRouter()
