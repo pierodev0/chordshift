@@ -7,6 +7,26 @@ const routes = [
     component: () => import('../views/SongList.vue'),
   },
   {
+    path: '/playlists',
+    name: 'playlists',
+    component: () => import('../views/PlaylistList.vue'),
+  },
+  {
+    path: '/playlists/new',
+    name: 'playlist-new',
+    component: () => import('../views/PlaylistEditor.vue'),
+  },
+  {
+    path: '/playlists/:id',
+    name: 'playlist-detail',
+    component: () => import('../views/PlaylistDetail.vue'),
+  },
+  {
+    path: '/playlists/:id/edit',
+    name: 'playlist-edit',
+    component: () => import('../views/PlaylistEditor.vue'),
+  },
+  {
     path: '/song/new',
     name: 'song-new',
     component: () => import('../views/SongEditor.vue'),
