@@ -1,0 +1,30 @@
+:root {
+  --color-paper: oklch(99% 0.005 85);
+  --color-accent: oklch(50% 0.13 282);
+  --color-accent-hover: oklch(45% 0.14 282);
+  --color-accent-subtle: oklch(94% 0.06 282);
+  --color-surface: oklch(97.5% 0.008 85);
+  --color-border: oklch(92% 0.012 85);
+  --color-ink: oklch(28% 0.03 85);
+  --color-ink-soft: oklch(55% 0.04 85);
+  --color-ink-subtle: oklch(70% 0.03 85);
+
+  --font-body: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 2.5rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 0.68, 0.06);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}

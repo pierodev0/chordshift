@@ -3,89 +3,10 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>ChordShift Pro v3.0 | Transpositor Profesional</title>
-        <link rel="stylesheet" href="/src/style.css" />
+        <title>ChordShift — Songbook</title>
     </head>
     <body>
-        <div class="container">
-            <header>
-                <h1>
-                    ChordShift Pro
-                    <span style="font-weight: normal; color: #64748b"
-                        >| Transpositor Avanzado</span
-                    >
-                </h1>
-            </header>
-
-            <div class="toolbar">
-                <button class="btn" onclick="changeTranspose(-1)">
-                    <svg
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path d="M5 12h14" />
-                    </svg>
-                    Semitono
-                </button>
-                <div class="key-display" id="keyDisplay">Tono Original</div>
-                <button class="btn" onclick="changeTranspose(1)">
-                    <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    Semitono
-                </button>
-                <div style="flex-grow: 1"></div>
-                <button class="btn btn-primary" onclick="copyFormatted()">
-                    <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path
-                            d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
-                        />
-                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                    </svg>
-                    Copiar para Word (Negritas)
-                </button>
-            </div>
-
-            <div class="main-grid">
-                <div class="editor-container">
-                    <div class="label">ENTRADA (LETRA Y ACORDES)</div>
-                    <textarea
-                        id="inputArea"
-                        spellcheck="false"
-                        placeholder="Pega aquí tu canción. Ejemplo:
-Fmaj7          Cadd9
-Tanto tiempo disfrutamos..."
-                    ></textarea>
-                </div>
-
-                <div class="editor-container">
-                    <div class="label">RESULTADO (FORMATO PROFESIONAL)</div>
-                    <pre id="output"></pre>
-                </div>
-            </div>
-        </div>
-
-        <div class="toast" id="toast">
-            ✅ ¡Copiado! Listo para pegar en Word
-        </div>
-
-        <script type="module" src="/src/app.js"></script>
+        <div id="app"></div>
+        <script type="module" src="/src/main.js"></script>
     </body>
 </html>
