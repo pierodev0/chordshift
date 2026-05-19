@@ -15,25 +15,37 @@
     </AppPageHeader>
 
     <template v-if="song">
-      <div :class="coverColor" class="px-4 py-6 flex flex-col items-center text-center -mt-px">
-        <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
-          <span class="text-3xl font-bold text-white/90">{{ initial }}</span>
+      <div class="flex-1 overflow-y-auto px-4 pb-24">
+        <div class="pt-4 pb-1">
+          <h1 class="text-2xl font-bold text-ink leading-tight">{{ song.title }}</h1>
+          <p v-if="song.artist" class="text-ink-soft text-sm mt-0.5">{{ song.artist }}</p>
         </div>
-        <h1 class="text-xl font-bold text-white leading-tight">{{ song.title }}</h1>
-        <p v-if="song.artist" class="text-white/70 text-sm mt-1">{{ song.artist }}</p>
-      </div>
 
-      <div class="px-4 -mt-3 relative z-10">
-        <TransposeBar :keyText @transpose="changeTranspose" />
-      </div>
+        <div class="pb-2">
+          <ChordLegend :chords="chords" />
+        </div>
 
-      <div class="flex-1 overflow-y-auto px-4 pt-4 pb-4">
         <div class="font-mono text-sm leading-relaxed whitespace-pre-wrap" v-html="renderedHtml" />
       </div>
 
-      <div class="px-4 pb-4 shrink-0">
-        <ChordLegend :chords="chords" />
-      </div>
+      <button
+        class="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-accent text-white border-none shadow-xl shadow-accent/30 transition-all duration-200 hover:bg-accent-hover hover:shadow-accent/40 active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
+        @click="showSheet = true"
+        aria-label="Transponer"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M9 18V5l12-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="16" r="3" />
+        </svg>
+      </button>
+
+      <TransposeSheet
+        :show="showSheet"
+        :keyText="keyText"
+        @close="showSheet = false"
+        @transpose="changeTranspose"
+      />
     </template>
 
     <div v-else class="flex-1 flex items-center justify-center text-ink-soft text-sm">
@@ -49,8 +61,8 @@ import { useSongsStore } from '../stores/songsStore'
 import { useChordTransposer } from '../composables/useChordTransposer'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import AppIconButton from '../components/AppIconButton.vue'
-import TransposeBar from '../components/TransposeBar.vue'
 import ChordLegend from '../components/ChordLegend.vue'
+import TransposeSheet from '../components/TransposeSheet.vue'
 
 const { chordRegex, isChordLine, transposeNote, escapeHTML } = useChordTransposer()
 
@@ -58,19 +70,10 @@ const route = useRoute()
 const router = useRouter()
 const store = useSongsStore()
 
+const showSheet = ref(false)
 const currentStep = ref(0)
 
 const song = computed(() => store.getById(route.params.id))
-
-const initial = computed(() => (song.value?.title || '?')[0].toUpperCase())
-
-const coverColor = computed(() => {
-  const c = initial.value
-  if (c <= 'B') return 'bg-cover-1'
-  if (c <= 'D') return 'bg-cover-2'
-  if (c <= 'L') return 'bg-cover-3'
-  return 'bg-cover-4'
-})
 
 const keyText = computed(() =>
   currentStep.value === 0
