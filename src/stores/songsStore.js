@@ -19,12 +19,13 @@ export const useSongsStore = defineStore('songs', () => {
     return songs.value.find((s) => s.id === id) || null
   }
 
-  function create({ title, artist, content }) {
+  function create({ title, artist, content, capo }) {
     const song = {
       id: crypto.randomUUID(),
       title,
       artist: artist || '',
       content: content || '',
+      capo: capo || '',
       transpose: 0,
       createdAt: Date.now(),
       updatedAt: Date.now(),

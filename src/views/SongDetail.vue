@@ -19,6 +19,7 @@
         <div class="pt-4 pb-1">
           <h1 class="text-2xl font-bold text-ink leading-tight">{{ song.title }}</h1>
           <p v-if="song.artist" class="text-ink-soft text-sm mt-0.5">{{ song.artist }}</p>
+          <p v-if="song.capo" class="text-accent text-xs mt-1 font-semibold">{{ formatCapo(song.capo) }}</p>
         </div>
 
         <div class="pb-2">
@@ -100,6 +101,23 @@ const sectionVisibility = ref({})
 
 const song = computed(() => store.getById(route.params.id))
 
+watch(() => route.params.id, () => {
+  showSheet.value = false
+  showSectionSheet.value = false
+})
+
+watch(song, (newSong) => {
+  if (newSong) {
+    currentStep.value = newSong.transpose || 0
+  }
+}, { immediate: true })
+
+watch(currentStep, (step) => {
+  if (song.value) {
+    store.update(song.value.id, { transpose: step })
+  }
+})
+
 const sections = computed(() => {
   if (!song.value) return []
   const lines = song.value.content.split('\n')
@@ -149,7 +167,7 @@ function lineIsVisible(lineIdx) {
 const keyText = computed(() =>
   currentStep.value === 0
     ? 'Tono Original'
-    : (currentStep.value > 0 ? '+' : '') + currentStep.value + ' Semitonos',
+    : 'Original → ' + (currentStep.value > 0 ? '+' : '') + currentStep.value,
 )
 
 const renderedHtml = computed(() => {
@@ -208,6 +226,10 @@ function toggleAllSections(currentlyAllVisible) {
     vis[sec.id] = newVal
   }
   sectionVisibility.value = vis
+}
+
+function formatCapo(val) {
+  return /^\d+$/.test(val) ? 'Capo ' + val : val
 }
 
 onMounted(() => {

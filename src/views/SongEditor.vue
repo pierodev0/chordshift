@@ -13,6 +13,11 @@
         label="Artista"
         placeholder="Nombre del artista"
       />
+      <AppInput
+        v-model="capo"
+        label="Capo (cejilla)"
+        placeholder="Ej: Capo 1, Capo 3..."
+      />
 
       <div class="flex-1 flex flex-col min-h-0">
         <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Letra y acordes</label>
@@ -58,6 +63,7 @@ const existing = computed(() => (isEdit.value ? store.getById(route.params.id) :
 
 const title = ref('')
 const artist = ref('')
+const capo = ref('')
 const content = ref('')
 
 function goBack() {
@@ -75,6 +81,7 @@ function save() {
     store.update(route.params.id, {
       title: title.value,
       artist: artist.value,
+      capo: capo.value,
       content: content.value,
     })
     router.push({ name: 'song-detail', params: { id: route.params.id } })
@@ -82,6 +89,7 @@ function save() {
     const song = store.create({
       title: title.value,
       artist: artist.value,
+      capo: capo.value,
       content: content.value,
     })
     router.push({ name: 'song-detail', params: { id: song.id } })
@@ -93,6 +101,7 @@ onMounted(() => {
   if (existing.value) {
     title.value = existing.value.title
     artist.value = existing.value.artist
+    capo.value = existing.value.capo || ''
     content.value = existing.value.content
   }
 })
