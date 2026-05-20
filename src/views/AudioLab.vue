@@ -6,7 +6,7 @@
       </template>
     </AppPageHeader>
 
-    <div class="flex-1 min-h-0 relative">
+    <div class="shrink-0 relative">
       <div v-if="loading" class="absolute inset-0 flex items-center justify-center text-ink-soft text-sm z-10 bg-paper">
         Cargando audio...
       </div>
@@ -59,7 +59,7 @@
         </button>
       </div>
 
-      <div v-if="!loading" class="border-t border-border bg-white shrink-0 overflow-y-auto max-h-[45vh]">
+      <div v-if="!loading" class="border-t border-border bg-white flex-1 overflow-y-auto min-h-0">
         <div class="px-4 py-3">
           <div class="flex items-center justify-between mb-2">
             <p class="text-[11px] font-bold text-ink-soft tracking-widest uppercase">Marcadores</p>
@@ -86,13 +86,28 @@
             >
               {{ m.label }}
             </span>
-            <span class="text-xs font-mono tabular-nums text-ink w-16">{{ formatTime(m.time) }}</span>
+
+            <span
+              class="text-xs font-mono tabular-nums text-ink w-24 cursor-pointer"
+              @click="editingMarkerId = m.id"
+            >{{ formatTime(m.time) }}</span>
+
             <button
               class="text-xs text-accent hover:text-accent-hover cursor-pointer bg-transparent border-none font-semibold"
               @click="seekToMarker(m)"
             >
               ▶ Ir
             </button>
+
+            <button
+              class="w-5 h-5 rounded flex items-center justify-center text-ink-subtle hover:text-accent hover:bg-accent-subtle cursor-pointer bg-transparent border-none"
+              @click="editingMarkerId = m.id"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+              </svg>
+            </button>
+
             <div class="flex-1" />
             <button
               class="w-5 h-5 rounded flex items-center justify-center text-ink-subtle hover:text-red-500 hover:bg-red-50 cursor-pointer bg-transparent border-none text-sm"
@@ -179,6 +194,103 @@
         </div>
       </div>
 
+    <div v-if="editingMarkerId" class="fixed inset-0 z-50" @click="editingMarkerId = ''">
+      <div class="absolute inset-0 bg-ink/40 animate-fade-in" />
+      <div
+        class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl px-6 pb-8 pt-3 animate-slide-up"
+        @click.stop
+      >
+        <div class="w-8 h-1 rounded-full bg-border mx-auto mb-4" />
+
+        <p class="text-center text-xs font-bold text-ink-soft tracking-widest uppercase mb-6">
+          Editar marcador {{ editingMarker?.label }}
+        </p>
+
+        <div class="flex justify-center items-center gap-3 font-mono mb-6">
+          <div class="flex flex-col items-center gap-1">
+            <button
+              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+              @click.stop="adjustMarkerTime(editingMarkerId, 'm', 1)"
+            >▲</button>
+            <input
+              type="number"
+              min="0"
+              :value="timeToParts(editingMarker?.time || 0).m"
+              @input="updateMarkerPart(editingMarkerId, 'm', $event)"
+              @wheel.prevent="adjustMarkerTime(editingMarkerId, 'm', $event.deltaY > 0 ? -1 : 1)"
+              class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <button
+              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+              @click.stop="adjustMarkerTime(editingMarkerId, 'm', -1)"
+            >▼</button>
+            <span class="text-[10px] text-ink-subtle mt-0.5">min</span>
+          </div>
+
+          <span class="text-lg text-ink-subtle font-bold -mt-6">:</span>
+
+          <div class="flex flex-col items-center gap-1">
+            <button
+              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+              @click.stop="adjustMarkerTime(editingMarkerId, 's', 1)"
+            >▲</button>
+            <input
+              type="number"
+              min="0"
+              max="59"
+              :value="timeToParts(editingMarker?.time || 0).s"
+              @input="updateMarkerPart(editingMarkerId, 's', $event)"
+              @wheel.prevent="adjustMarkerTime(editingMarkerId, 's', $event.deltaY > 0 ? -1 : 1)"
+              class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <button
+              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+              @click.stop="adjustMarkerTime(editingMarkerId, 's', -1)"
+            >▼</button>
+            <span class="text-[10px] text-ink-subtle mt-0.5">seg</span>
+          </div>
+
+          <span class="text-lg text-ink-subtle font-bold -mt-6">.</span>
+
+          <div class="flex flex-col items-center gap-1">
+            <button
+              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+              @click.stop="adjustMarkerTime(editingMarkerId, 'ms', 10)"
+            >▲</button>
+            <input
+              type="number"
+              min="0"
+              max="999"
+              :value="timeToParts(editingMarker?.time || 0).ms"
+              @input="updateMarkerPart(editingMarkerId, 'ms', $event)"
+              @wheel.prevent="adjustMarkerTime(editingMarkerId, 'ms', $event.deltaY > 0 ? -10 : 10)"
+              class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <button
+              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+              @click.stop="adjustMarkerTime(editingMarkerId, 'ms', -10)"
+            >▼</button>
+            <span class="text-[10px] text-ink-subtle mt-0.5">ms</span>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border bg-white text-ink hover:bg-surface transition-colors cursor-pointer"
+            @click="seekToMarker(editingMarker)"
+          >
+            ▶ Ir
+          </button>
+          <button
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white border-none hover:bg-accent-hover transition-colors cursor-pointer"
+            @click="editingMarkerId = ''"
+          >
+            ✓ Listo
+          </button>
+        </div>
+      </div>
+    </div>
+
     <SpeedSheet
       v-if="showSpeedSheet"
       :value="playbackRate"
@@ -209,7 +321,7 @@ const { bpm, beatTimes, detected, detecting, detect, snapToBeat } = useBeatDetec
 const audioLooper = useAudioLooper()
 const {
   markers, loops, loopEnabled, snapEnabled, activeFrom, activeTo, activeLoop,
-  addMarker, removeMarker, setActiveFrom, setActiveTo, saveLoop,
+  addMarker, removeMarker, updateMarkerTime, setActiveFrom, setActiveTo, saveLoop,
   snapToBeatFn,
 } = audioLooper
 
@@ -223,6 +335,9 @@ const duration = ref(0)
 const playbackRate = ref(1)
 const showSpeedSheet = ref(false)
 const currentZoom = ref(50)
+const editingMarkerId = ref('')
+
+const editingMarker = computed(() => markers.value.find((m) => m.id === editingMarkerId.value) || null)
 
 const ZOOM_MIN = 10           // min px/sec — waveform comprimido
 const ZOOM_MAX = 200           // max px/sec — waveform expandido
@@ -240,10 +355,51 @@ let restoring = false
 const displayedBeats = computed(() => beatTimes.value.slice(0, 40))
 
 function formatTime(t) {
-  if (!t || isNaN(t)) return '0:00'
+  if (!t || isNaN(t)) return '0:00.000'
   const m = Math.floor(t / 60)
   const s = Math.floor(t % 60)
-  return `${m}:${s.toString().padStart(2, '0')}`
+  const ms = Math.floor((t % 1) * 1000)
+  return `${m}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`
+}
+
+function timeToParts(t) {
+  if (!t || isNaN(t)) return { m: 0, s: 0, ms: 0 }
+  return {
+    m: Math.floor(t / 60),
+    s: Math.floor(t % 60),
+    ms: Math.floor((t % 1) * 1000),
+  }
+}
+
+function updateMarkerPart(id, part, e) {
+  const val = parseInt(e.target.value, 10) || 0
+  const cur = timeToParts(markers.value.find((m) => m.id === id)?.time || 0)
+  let newTime = cur.m * 60 + cur.s + cur.ms / 1000
+  if (part === 'm') newTime = val * 60 + cur.s + cur.ms / 1000
+  else if (part === 's') newTime = cur.m * 60 + val + cur.ms / 1000
+  else if (part === 'ms') newTime = cur.m * 60 + cur.s + val / 1000
+  updateMarkerTime(id, newTime)
+  updateMarkerRegions()
+  autoSave()
+}
+
+function adjustMarkerTime(id, part, delta) {
+  const m = markers.value.find((m) => m.id === id)
+  if (!m) return
+  const cur = timeToParts(m.time)
+  let newTime = cur.m * 60 + cur.s + cur.ms / 1000
+  if (part === 'm') newTime = Math.max(0, cur.m + delta) * 60 + cur.s + cur.ms / 1000
+  else if (part === 's') {
+    const newS = Math.max(0, Math.min(59, cur.s + delta))
+    newTime = cur.m * 60 + newS + cur.ms / 1000
+  }
+  else if (part === 'ms') {
+    const newMs = Math.max(0, Math.min(999, cur.ms + delta))
+    newTime = cur.m * 60 + cur.s + newMs / 1000
+  }
+  updateMarkerTime(id, newTime)
+  updateMarkerRegions()
+  autoSave()
 }
 
 // Necesitamos un ref aparte del zoom de wavesurfer para re-sincronizar el scroll follow
