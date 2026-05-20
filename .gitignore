@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .agents/
+# Local Pi runtime state
+.atl/
+# PWA dev service worker
+dev-dist/
