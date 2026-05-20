@@ -21,9 +21,21 @@
       <div class="h-full rounded-full bg-accent transition-[width] duration-200" :style="{ width: progress + '%' }" />
     </div>
 
-    <span class="text-[11px] text-ink-soft font-mono tabular-nums w-[72px] text-right shrink-0">
-      {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+    <span class="text-[11px] text-ink-soft font-mono tabular-nums w-[80px] text-right shrink-0">
+      {{ displayTime }}
     </span>
+
+    <button
+      class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
+      :class="playbackRate !== 1 ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+      @click="showSpeedSheet = true"
+      aria-label="Velocidad"
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    </button>
 
     <button
       class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
@@ -40,10 +52,18 @@
 
     <audio ref="audioEl" :src="audioUrl" @timeupdate="onTimeUpdate" @loadedmetadata="onLoaded" @ended="onEnded" />
   </div>
+
+  <SpeedSheet
+    v-if="showSpeedSheet"
+    :value="playbackRate"
+    @close="showSpeedSheet = false"
+    @change="playbackRate = $event"
+  />
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import SpeedSheet from './SpeedSheet.vue'
 
 const props = defineProps({
   audioUrl: String,
@@ -57,6 +77,15 @@ const playing = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const progress = ref(0)
+const playbackRate = ref(1)
+const showSpeedSheet = ref(false)
+
+const displayTime = computed(() => {
+  const rate = playbackRate.value
+  const effCurrent = rate > 0 ? currentTime.value / rate : 0
+  const effDuration = rate > 0 ? duration.value / rate : 0
+  return formatTime(effCurrent) + ' / ' + formatTime(effDuration)
+})
 
 function togglePlay() {
   if (!audioEl.value) return
@@ -84,6 +113,8 @@ function onTimeUpdate() {
 function onLoaded() {
   if (!audioEl.value) return
   duration.value = audioEl.value.duration || 0
+  audioEl.value.playbackRate = playbackRate.value
+  audioEl.value.preservesPitch = true
   emit('loaded', audioEl.value.duration)
 }
 
@@ -105,11 +136,19 @@ function formatTime(t) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+watch(playbackRate, (rate) => {
+  if (audioEl.value) {
+    audioEl.value.playbackRate = rate
+    audioEl.value.preservesPitch = true
+  }
+})
+
 watch(() => props.audioUrl, () => {
   playing.value = false
   currentTime.value = 0
   duration.value = 0
   progress.value = 0
+  playbackRate.value = 1
 })
 
 onBeforeUnmount(() => {
