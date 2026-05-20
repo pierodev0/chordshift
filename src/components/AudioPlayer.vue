@@ -26,6 +26,20 @@
     </span>
 
     <button
+      v-if="loopRange"
+      class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer shrink-0 text-accent bg-accent-subtle"
+      disabled
+      aria-label="Bucle activo"
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <polyline points="17 1 21 5 17 9" />
+        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+        <polyline points="7 23 3 19 7 15" />
+        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+      </svg>
+    </button>
+
+    <button
       class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
       :class="playbackRate !== 1 ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
       @click="showSpeedSheet = true"
@@ -85,6 +99,7 @@ const props = defineProps({
   totalLines: { type: Number, default: 0 },
   autoScrolling: Boolean,
   showLab: Boolean,
+  loopRange: { type: Object, default: null }, // { from: number, to: number } | null
 })
 const emit = defineEmits(['toggleAutoScroll', 'loaded', 'openLab'])
 
@@ -108,6 +123,9 @@ function togglePlay() {
   if (playing.value) {
     audioEl.value.pause()
   } else {
+    if (props.loopRange) {
+      audioEl.value.currentTime = props.loopRange.from
+    }
     audioEl.value.play()
   }
   playing.value = !playing.value
@@ -118,6 +136,11 @@ function onTimeUpdate() {
   const t = audioEl.value.currentTime
   currentTime.value = t
   progress.value = duration.value ? (t / duration.value) * 100 : 0
+
+  if (props.loopRange && t >= props.loopRange.to) {
+    audioEl.value.currentTime = props.loopRange.from
+    return
+  }
 
   if (props.autoScrolling && props.totalLines > 0 && duration.value > 0) {
     const idx = Math.min(Math.floor((t / duration.value) * props.totalLines), props.totalLines - 1)
