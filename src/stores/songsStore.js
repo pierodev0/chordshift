@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { localStorageAdapter } from './adapters/localStorageAdapter'
+import { uuid } from '../utils/uuid'
 
 export const useSongsStore = defineStore('songs', () => {
   const songs = ref([])
@@ -21,7 +22,7 @@ export const useSongsStore = defineStore('songs', () => {
 
   function create({ title, artist, content, capo, audioKey }) {
     const song = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       title,
       artist: artist || '',
       content: content || '',

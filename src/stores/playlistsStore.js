@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-
-const STORAGE_KEY = 'chordshift-playlists'
+import { uuid } from '../utils/uuid'
 
 function loadAll() {
   try {
@@ -34,7 +33,7 @@ export const usePlaylistsStore = defineStore('playlists', () => {
 
   function create({ name }) {
     const playlist = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       name,
       songIds: [],
       createdAt: Date.now(),
