@@ -15,7 +15,15 @@
     </AppPageHeader>
 
     <template v-if="song">
-      <div class="flex-1 overflow-y-auto px-4 pb-24">
+      <AudioPlayer
+        :audioUrl="audioUrl"
+        :totalLines="totalLines"
+        :autoScrolling="autoScrolling"
+        @toggleAutoScroll="autoScrolling = !autoScrolling"
+        @loaded="songDuration = $event"
+      />
+
+      <div ref="scrollContainer" class="flex-1 overflow-y-auto px-4 scroll-smooth">
         <div class="pt-4 pb-1">
           <h1 class="text-2xl font-bold text-ink leading-tight">{{ song.title }}</h1>
           <p v-if="song.artist" class="text-ink-soft text-sm mt-0.5">{{ song.artist }}</p>
@@ -26,7 +34,7 @@
           <ChordLegend :chords="chords" />
         </div>
 
-        <div class="font-mono text-sm leading-relaxed whitespace-pre-wrap" v-html="renderedHtml" />
+        <div class="font-mono text-sm leading-relaxed whitespace-pre-wrap pb-24" v-html="renderedHtml" />
       </div>
 
       <button
@@ -53,12 +61,7 @@
         </svg>
       </button>
 
-      <TransposeSheet
-        :show="showSheet"
-        :keyText="keyText"
-        @close="showSheet = false"
-        @transpose="changeTranspose"
-      />
+      <TransposeSheet :show="showSheet" :keyText="keyText" @close="showSheet = false" @transpose="changeTranspose" />
 
       <SectionNavSheet
         v-if="sections.length > 0"
@@ -78,17 +81,20 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { useChordTransposer } from '../composables/useChordTransposer'
+import { useAudioCache } from '../composables/useAudioCache'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import AppIconButton from '../components/AppIconButton.vue'
 import ChordLegend from '../components/ChordLegend.vue'
+import AudioPlayer from '../components/AudioPlayer.vue'
 import TransposeSheet from '../components/TransposeSheet.vue'
 import SectionNavSheet from '../components/SectionNavSheet.vue'
 
 const { chordRegex, isChordLine, transposeNote, escapeHTML } = useChordTransposer()
+const { loadAudio } = useAudioCache()
 
 const route = useRoute()
 const router = useRouter()
@@ -98,12 +104,18 @@ const showSheet = ref(false)
 const showSectionSheet = ref(false)
 const currentStep = ref(0)
 const sectionVisibility = ref({})
+const audioUrl = ref(null)
+const autoScrolling = ref(true)
+const songDuration = ref(0)
+const scrollContainer = ref(null)
 
 const song = computed(() => store.getById(route.params.id))
 
 watch(() => route.params.id, () => {
   showSheet.value = false
   showSectionSheet.value = false
+  autoScrolling.value = false
+  audioUrl.value = null
 })
 
 watch(song, (newSong) => {
@@ -118,6 +130,25 @@ watch(currentStep, (step) => {
   }
 })
 
+// --- Audio ---
+async function loadSongAudio() {
+  if (!song.value?.audioKey) return
+  const result = await loadAudio(song.value.id)
+  if (result) {
+    if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
+    audioUrl.value = result.url
+  }
+}
+
+watch(song, () => { loadSongAudio() }, { immediate: true })
+
+onBeforeUnmount(() => {
+  if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
+})
+
+const totalLines = computed(() => song.value?.content.split('\n').length || 0)
+
+// --- Sections ---
 const sections = computed(() => {
   if (!song.value) return []
   const lines = song.value.content.split('\n')
@@ -164,6 +195,7 @@ function lineIsVisible(lineIdx) {
   return visibleLineRanges.value.some((r) => lineIdx >= r.start && lineIdx < r.end)
 }
 
+// --- Transpose ---
 const keyText = computed(() =>
   currentStep.value === 0
     ? 'Tono Original'
@@ -179,20 +211,20 @@ const renderedHtml = computed(() => {
     if (!lineIsVisible(i)) continue
 
     const line = lines[i]
+    let processed
     if (isChordLine(line)) {
-      rendered.push(
-        line.replace(chordRegex, (match, root, bass) => {
-          const transRoot = transposeNote(root, currentStep.value)
-          const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
-          return `<strong>${transRoot}${transBass}</strong>`
-        }),
-      )
+      processed = line.replace(chordRegex, (match, root, bass) => {
+        const transRoot = transposeNote(root, currentStep.value)
+        const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
+        return `<strong>${transRoot}${transBass}</strong>`
+      })
     } else {
-      rendered.push(escapeHTML(line))
+      processed = escapeHTML(line)
     }
+    rendered.push(`<div id="line-${i}">${processed}</div>`)
   }
 
-  return rendered.join('\n')
+  return rendered.join('')
 })
 
 const chords = computed(() => {
