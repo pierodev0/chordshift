@@ -111,7 +111,7 @@
             <div class="flex-1" />
             <button
               class="w-5 h-5 rounded flex items-center justify-center text-ink-subtle hover:text-red-500 hover:bg-red-50 cursor-pointer bg-transparent border-none text-sm"
-              @click="removeMarker(m.id)"
+              @click="confirmRemoveMarker(m)"
             >
               ×
             </button>
@@ -200,6 +200,16 @@
           Editar marcador {{ editingMarker?.label }}
         </p>
       </template>
+
+      <div class="mb-5">
+        <label class="text-[10px] text-ink-soft font-bold tracking-widest uppercase block mb-1.5">Nombre</label>
+        <input
+          type="text"
+          :value="editingLabel"
+          @input="updateMarkerLabel(editingMarkerId, $event.target.value)"
+          class="w-full h-10 text-sm border border-border rounded-xl bg-surface px-3 focus:outline-none focus:ring-1 focus:ring-accent"
+        />
+      </div>
 
       <div class="flex justify-center items-center gap-3 font-mono mb-6">
         <div class="flex flex-col items-center gap-1">
@@ -327,8 +337,14 @@ const playbackRate = ref(1)
 const showSpeedSheet = ref(false)
 const currentZoom = ref(50)
 const editingMarkerId = ref('')
+const editingLabel = ref('')
 
 const editingMarker = computed(() => markers.value.find((m) => m.id === editingMarkerId.value) || null)
+
+watch(editingMarkerId, (id) => {
+  const m = markers.value.find((mk) => mk.id === id)
+  editingLabel.value = m?.label ?? ''
+})
 
 const ZOOM_MIN = 10           // min px/sec — waveform comprimido
 const ZOOM_MAX = 200           // max px/sec — waveform expandido
@@ -370,6 +386,15 @@ function updateMarkerPart(id, part, e) {
            + (part === 's' ? val * 1000 : p.s * 1000)
            + (part === 'ms' ? val : p.ms)
   updateMarkerTime(id, Math.max(0, ms / 1000))
+  updateMarkerRegions()
+  autoSave()
+}
+
+function updateMarkerLabel(id, label) {
+  const m = markers.value.find((mk) => mk.id === id)
+  if (!m) return
+  m.label = label
+  editingLabel.value = label
   updateMarkerRegions()
   autoSave()
 }
@@ -421,6 +446,13 @@ function addMarkerAtCurrent() {
   const snapFn = snapEnabled.value ? snapToBeat : null
   const time = snapFn ? snapFn(t) : t
   addMarker(time)
+  syncMarkerRegions()
+  autoSave()
+}
+
+function confirmRemoveMarker(marker) {
+  if (!confirm(`¿Eliminar marcador ${marker.label}?`)) return
+  removeMarker(marker.id)
   syncMarkerRegions()
   autoSave()
 }
