@@ -302,6 +302,7 @@ import SpeedSheet from '../components/SpeedSheet.vue'
 import WaveSurfer from 'wavesurfer.js'
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js'
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js'
+import { Time } from 'tone'
 
 const route = useRoute()
 const router = useRouter()
@@ -354,21 +355,21 @@ function formatTime(t) {
 
 function timeToParts(t) {
   if (!t || isNaN(t)) return { m: 0, s: 0, ms: 0 }
+  const ms = Math.round(new Time(t).toSeconds() * 1000)
   return {
-    m: Math.floor(t / 60),
-    s: Math.floor(t % 60),
-    ms: Math.floor((t % 1) * 1000),
+    m: Math.floor(ms / 60000),
+    s: Math.floor((ms % 60000) / 1000),
+    ms: ms % 1000,
   }
 }
 
 function updateMarkerPart(id, part, e) {
   const val = parseInt(e.target.value, 10) || 0
-  const cur = timeToParts(markers.value.find((m) => m.id === id)?.time || 0)
-  let newTime = cur.m * 60 + cur.s + cur.ms / 1000
-  if (part === 'm') newTime = val * 60 + cur.s + cur.ms / 1000
-  else if (part === 's') newTime = cur.m * 60 + val + cur.ms / 1000
-  else if (part === 'ms') newTime = cur.m * 60 + cur.s + val / 1000
-  updateMarkerTime(id, newTime)
+  const p = timeToParts(markers.value.find((m) => m.id === id)?.time)
+  const ms = (part === 'm' ? val * 60000 : p.m * 60000)
+           + (part === 's' ? val * 1000 : p.s * 1000)
+           + (part === 'ms' ? val : p.ms)
+  updateMarkerTime(id, Math.max(0, ms / 1000))
   updateMarkerRegions()
   autoSave()
 }
@@ -376,18 +377,10 @@ function updateMarkerPart(id, part, e) {
 function adjustMarkerTime(id, part, delta) {
   const m = markers.value.find((m) => m.id === id)
   if (!m) return
-  const cur = timeToParts(m.time)
-  let newTime = cur.m * 60 + cur.s + cur.ms / 1000
-  if (part === 'm') newTime = Math.max(0, cur.m + delta) * 60 + cur.s + cur.ms / 1000
-  else if (part === 's') {
-    const newS = Math.max(0, Math.min(59, cur.s + delta))
-    newTime = cur.m * 60 + newS + cur.ms / 1000
-  }
-  else if (part === 'ms') {
-    const newMs = Math.max(0, Math.min(999, cur.ms + delta))
-    newTime = cur.m * 60 + cur.s + newMs / 1000
-  }
-  updateMarkerTime(id, newTime)
+  const p = timeToParts(m.time)
+  const ms = p.m * 60000 + p.s * 1000 + p.ms
+  const addMs = { m: delta * 60000, s: delta * 1000, ms: delta }[part]
+  updateMarkerTime(id, Math.max(0, (ms + addMs) / 1000))
   updateMarkerRegions()
   autoSave()
 }
