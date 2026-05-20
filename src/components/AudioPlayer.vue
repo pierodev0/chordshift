@@ -38,6 +38,21 @@
     </button>
 
     <button
+      v-if="showLab"
+      class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 text-ink-subtle hover:text-accent hover:bg-accent-subtle"
+      @click="$emit('openLab')"
+      aria-label="Audio Lab"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M3 14s1.5-2 4-2 4 2 4 2 1.5-2 4-2 4 2 4 2" />
+        <path d="M3 10s1.5-2 4-2 4 2 4 2 1.5-2 4-2 4 2 4 2" />
+        <path d="M3 6s1.5-2 4-2 4 2 4 2 1.5-2 4-2 4 2 4 2" />
+        <line x1="12" y1="18" x2="12" y2="22" />
+        <line x1="9" y1="22" x2="15" y2="22" />
+      </svg>
+    </button>
+
+    <button
       class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
       :class="autoScrolling ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
       @click="$emit('toggleAutoScroll')"
@@ -69,8 +84,9 @@ const props = defineProps({
   audioUrl: String,
   totalLines: { type: Number, default: 0 },
   autoScrolling: Boolean,
+  showLab: Boolean,
 })
-const emit = defineEmits(['toggleAutoScroll', 'loaded'])
+const emit = defineEmits(['toggleAutoScroll', 'loaded', 'openLab'])
 
 const audioEl = ref(null)
 const playing = ref(false)

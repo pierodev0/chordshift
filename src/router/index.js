@@ -41,6 +41,11 @@ const routes = [
     name: 'song-edit',
     component: () => import('../views/SongEditor.vue'),
   },
+  {
+    path: '/song/:id/audio',
+    name: 'song-audio',
+    component: () => import('../views/AudioLab.vue'),
+  },
 ]
 
 export default createRouter({

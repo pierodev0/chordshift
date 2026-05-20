@@ -19,6 +19,8 @@
     "sortablejs": "^1.15.7",
     "vue": "^3.5.34",
     "vue-router": "^5.0.7",
-    "vuedraggable": "^4.1.0"
+    "vuedraggable": "^4.1.0",
+    "wavesurfer.js": "^7.12.7",
+    "web-audio-beat-detector": "^8.2.36"
   }
 }

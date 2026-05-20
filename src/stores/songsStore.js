@@ -28,6 +28,8 @@ export const useSongsStore = defineStore('songs', () => {
       capo: capo || '',
       audioKey: audioKey || '',
       transpose: 0,
+      markers: [],
+      loops: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }

@@ -28,8 +28,10 @@
         :audioUrl="audioUrl"
         :totalLines="totalLines"
         :autoScrolling="autoScrolling"
+        :showLab="!!song?.audioKey"
         @toggleAutoScroll="autoScrolling = !autoScrolling"
         @loaded="songDuration = $event"
+        @openLab="router.push({ name: 'song-audio', params: { id: song.id } })"
       />
 
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-4 scroll-smooth">

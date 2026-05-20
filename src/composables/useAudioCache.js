@@ -38,6 +38,29 @@ export function useAudioCache() {
     return { url: URL.createObjectURL(blob), name: result.name }
   }
 
+  async function loadAudioBlob(songId) {
+    const db = await openDB()
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    const result = await new Promise((resolve, reject) => {
+      const req = store.get(`audio-${songId}`)
+      req.onsuccess = () => resolve(req.result)
+      req.onerror = () => reject(req.error)
+    })
+    if (!result) return null
+    return new Blob([result.blob], { type: result.type || 'audio/mpeg' })
+  }
+
+  async function loadAudioBuffer(songId) {
+    const blob = await loadAudioBlob(songId)
+    if (!blob) return null
+    const arrayBuffer = await blob.arrayBuffer()
+    const ctx = new AudioContext()
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+    ctx.close()
+    return audioBuffer
+  }
+
   async function deleteAudio(songId) {
     const db = await openDB()
     const tx = db.transaction(STORE_NAME, 'readwrite')
@@ -49,5 +72,5 @@ export function useAudioCache() {
     })
   }
 
-  return { saveAudio, loadAudio, deleteAudio }
+  return { saveAudio, loadAudio, loadAudioBlob, loadAudioBuffer, deleteAudio }
 }
