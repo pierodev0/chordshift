@@ -257,6 +257,13 @@ function zoomOut() { applyZoom(currentZoom.value - 15) }
 
 function togglePlay() {
   if (!ws) return
+  const loop = activeLoop.value
+  if (loop && playing.value === false) {
+    const t = ws.getCurrentTime()
+    if (t < loop.from || t > loop.to) {
+      ws.setTime(loop.from)
+    }
+  }
   ws.playPause()
 }
 
@@ -294,6 +301,10 @@ function loadLoop(loop) {
   setActiveTo(loop.to)
   loopEnabled.value = true
   updateLoopRegion()
+  if (ws) {
+    const fromM = markers.value.find((m) => m.id === loop.from)
+    if (fromM) ws.setTime(fromM.time)
+  }
 }
 
 function saveCurrentLoop() {
