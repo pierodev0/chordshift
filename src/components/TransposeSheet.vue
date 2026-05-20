@@ -1,22 +1,14 @@
 <template>
-  <div
-    v-if="show"
-    class="fixed inset-0 z-50"
-    @click="$emit('close')"
-  >
-    <div class="absolute inset-0 bg-ink/40 sheet-bg" />
-    <div
-      class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl px-5 pt-5 pb-8 shadow-xl sheet-panel"
-      @click.stop
-    >
-      <div class="w-8 h-1 rounded-full bg-border mx-auto mb-4" />
+  <AppBottomSheet :show="show" panelClass="px-5 pt-5 pb-8" @close="$emit('close')">
+    <template #title>
       <p class="text-center text-xs font-bold text-ink-soft tracking-widest uppercase mb-3">Transponer</p>
-      <TransposeBar :keyText @transpose="$emit('transpose', $event)" />
-    </div>
-  </div>
+    </template>
+    <TransposeBar :keyText @transpose="$emit('transpose', $event)" />
+  </AppBottomSheet>
 </template>
 
 <script setup>
+import AppBottomSheet from './AppBottomSheet.vue'
 import TransposeBar from './TransposeBar.vue'
 
 defineProps({
@@ -25,20 +17,3 @@ defineProps({
 })
 defineEmits(['close', 'transpose'])
 </script>
-
-<style scoped>
-.sheet-bg {
-  animation: sheetFadeIn 0.2s ease;
-}
-.sheet-panel {
-  animation: sheetSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes sheetFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes sheetSlideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-</style>

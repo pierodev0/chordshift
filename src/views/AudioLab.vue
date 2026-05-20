@@ -194,105 +194,94 @@
         </div>
       </div>
 
-    <div v-if="editingMarkerId" class="fixed inset-0 z-50" @click="editingMarkerId = ''">
-      <div class="absolute inset-0 bg-ink/40 animate-fade-in" />
-      <div
-        class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl px-6 pb-8 pt-3 animate-slide-up"
-        @click.stop
-      >
-        <div class="w-8 h-1 rounded-full bg-border mx-auto mb-4" />
-
+    <AppBottomSheet :show="!!editingMarkerId" @close="editingMarkerId = ''">
+      <template #title>
         <p class="text-center text-xs font-bold text-ink-soft tracking-widest uppercase mb-6">
           Editar marcador {{ editingMarker?.label }}
         </p>
+      </template>
 
-        <div class="flex justify-center items-center gap-3 font-mono mb-6">
-          <div class="flex flex-col items-center gap-1">
-            <button
-              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
-              @click.stop="adjustMarkerTime(editingMarkerId, 'm', 1)"
-            >▲</button>
-            <input
-              type="number"
-              min="0"
-              :value="timeToParts(editingMarker?.time || 0).m"
-              @input="updateMarkerPart(editingMarkerId, 'm', $event)"
-              @wheel.prevent="adjustMarkerTime(editingMarkerId, 'm', $event.deltaY > 0 ? -1 : 1)"
-              class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <button
-              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
-              @click.stop="adjustMarkerTime(editingMarkerId, 'm', -1)"
-            >▼</button>
-            <span class="text-[10px] text-ink-subtle mt-0.5">min</span>
-          </div>
-
-          <span class="text-lg text-ink-subtle font-bold -mt-6">:</span>
-
-          <div class="flex flex-col items-center gap-1">
-            <button
-              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
-              @click.stop="adjustMarkerTime(editingMarkerId, 's', 1)"
-            >▲</button>
-            <input
-              type="number"
-              min="0"
-              max="59"
-              :value="timeToParts(editingMarker?.time || 0).s"
-              @input="updateMarkerPart(editingMarkerId, 's', $event)"
-              @wheel.prevent="adjustMarkerTime(editingMarkerId, 's', $event.deltaY > 0 ? -1 : 1)"
-              class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <button
-              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
-              @click.stop="adjustMarkerTime(editingMarkerId, 's', -1)"
-            >▼</button>
-            <span class="text-[10px] text-ink-subtle mt-0.5">seg</span>
-          </div>
-
-          <span class="text-lg text-ink-subtle font-bold -mt-6">.</span>
-
-          <div class="flex flex-col items-center gap-1">
-            <button
-              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
-              @click.stop="adjustMarkerTime(editingMarkerId, 'ms', 10)"
-            >▲</button>
-            <input
-              type="number"
-              min="0"
-              max="999"
-              :value="timeToParts(editingMarker?.time || 0).ms"
-              @input="updateMarkerPart(editingMarkerId, 'ms', $event)"
-              @wheel.prevent="adjustMarkerTime(editingMarkerId, 'ms', $event.deltaY > 0 ? -10 : 10)"
-              class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <button
-              class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
-              @click.stop="adjustMarkerTime(editingMarkerId, 'ms', -10)"
-            >▼</button>
-            <span class="text-[10px] text-ink-subtle mt-0.5">ms</span>
-          </div>
+      <div class="flex justify-center items-center gap-3 font-mono mb-6">
+        <div class="flex flex-col items-center gap-1">
+          <button
+            class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+            @click="adjustMarkerTime(editingMarkerId, 'm', 1)"
+          >▲</button>
+          <input
+            type="number" min="0"
+            :value="timeToParts(editingMarker?.time || 0).m"
+            @input="updateMarkerPart(editingMarkerId, 'm', $event)"
+            @wheel.prevent="adjustMarkerTime(editingMarkerId, 'm', $event.deltaY > 0 ? -1 : 1)"
+            class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <button
+            class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+            @click="adjustMarkerTime(editingMarkerId, 'm', -1)"
+          >▼</button>
+          <span class="text-[10px] text-ink-subtle mt-0.5">min</span>
         </div>
 
-        <div class="flex gap-3">
+        <span class="text-lg text-ink-subtle font-bold -mt-6">:</span>
+
+        <div class="flex flex-col items-center gap-1">
           <button
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border bg-white text-ink hover:bg-surface transition-colors cursor-pointer"
-            @click="seekToMarker(editingMarker)"
-          >
-            ▶ Ir
-          </button>
+            class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+            @click="adjustMarkerTime(editingMarkerId, 's', 1)"
+          >▲</button>
+          <input
+            type="number" min="0" max="59"
+            :value="timeToParts(editingMarker?.time || 0).s"
+            @input="updateMarkerPart(editingMarkerId, 's', $event)"
+            @wheel.prevent="adjustMarkerTime(editingMarkerId, 's', $event.deltaY > 0 ? -1 : 1)"
+            class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
           <button
-            class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white border-none hover:bg-accent-hover transition-colors cursor-pointer"
-            @click="editingMarkerId = ''"
-          >
-            ✓ Listo
-          </button>
+            class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+            @click="adjustMarkerTime(editingMarkerId, 's', -1)"
+          >▼</button>
+          <span class="text-[10px] text-ink-subtle mt-0.5">seg</span>
+        </div>
+
+        <span class="text-lg text-ink-subtle font-bold -mt-6">.</span>
+
+        <div class="flex flex-col items-center gap-1">
+          <button
+            class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+            @click="adjustMarkerTime(editingMarkerId, 'ms', 10)"
+          >▲</button>
+          <input
+            type="number" min="0" max="999"
+            :value="timeToParts(editingMarker?.time || 0).ms"
+            @input="updateMarkerPart(editingMarkerId, 'ms', $event)"
+            @wheel.prevent="adjustMarkerTime(editingMarkerId, 'ms', $event.deltaY > 0 ? -10 : 10)"
+            class="w-16 h-10 text-lg text-center border border-border rounded-xl bg-surface focus:outline-none focus:ring-1 focus:ring-accent tabular-nums appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <button
+            class="w-12 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink hover:bg-surface border-none cursor-pointer text-sm transition-colors"
+            @click="adjustMarkerTime(editingMarkerId, 'ms', -10)"
+          >▼</button>
+          <span class="text-[10px] text-ink-subtle mt-0.5">ms</span>
         </div>
       </div>
-    </div>
+
+      <div class="flex gap-3">
+        <button
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border bg-white text-ink hover:bg-surface transition-colors cursor-pointer"
+          @click="seekToMarker(editingMarker)"
+        >
+          ▶ Ir
+        </button>
+        <button
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white border-none hover:bg-accent-hover transition-colors cursor-pointer"
+          @click="editingMarkerId = ''"
+        >
+          ✓ Listo
+        </button>
+      </div>
+    </AppBottomSheet>
 
     <SpeedSheet
-      v-if="showSpeedSheet"
+      :show="showSpeedSheet"
       :value="playbackRate"
       @close="showSpeedSheet = false"
       @change="changePlaybackRate"
@@ -308,6 +297,7 @@ import { useAudioCache } from '../composables/useAudioCache'
 import { useBeatDetection } from '../composables/useBeatDetection'
 import { useAudioLooper } from '../composables/useAudioLooper'
 import AppPageHeader from '../components/AppPageHeader.vue'
+import AppBottomSheet from '../components/AppBottomSheet.vue'
 import SpeedSheet from '../components/SpeedSheet.vue'
 import WaveSurfer from 'wavesurfer.js'
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js'

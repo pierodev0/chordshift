@@ -69,7 +69,7 @@
   </div>
 
   <SpeedSheet
-    v-if="showSpeedSheet"
+    :show="showSpeedSheet"
     :value="playbackRate"
     @close="showSpeedSheet = false"
     @change="playbackRate = $event"
