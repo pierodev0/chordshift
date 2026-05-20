@@ -13,7 +13,7 @@
           <input
             ref="fileInput"
             type="file"
-            accept="audio/mpeg"
+            accept="audio/*,.mp3"
             class="hidden"
             @change="onFileSelected"
           />
