@@ -4,6 +4,15 @@
       <template #actions>
         <AppIconButton
           v-if="song"
+          @click="deleteSong"
+          aria-label="Eliminar"
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-400">
+            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+          </svg>
+        </AppIconButton>
+        <AppIconButton
+          v-if="song"
           @click="router.push({ name: 'song-edit', params: { id: song.id } })"
           aria-label="Editar"
         >
@@ -94,7 +103,7 @@ import TransposeSheet from '../components/TransposeSheet.vue'
 import SectionNavSheet from '../components/SectionNavSheet.vue'
 
 const { chordRegex, isChordLine, transposeNote, escapeHTML } = useChordTransposer()
-const { loadAudio } = useAudioCache()
+const { loadAudio, deleteAudio } = useAudioCache()
 
 const route = useRoute()
 const router = useRouter()
@@ -141,6 +150,17 @@ async function loadSongAudio() {
 }
 
 watch(song, () => { loadSongAudio() }, { immediate: true })
+
+async function deleteSong() {
+  if (!song.value) return
+  if (!confirm('¿Eliminar canción?\nEsta acción no se puede deshacer.')) return
+  const id = song.value.id
+  if (song.value.audioKey) {
+    await deleteAudio(id)
+  }
+  store.remove(id)
+  router.push({ name: 'home' })
+}
 
 onBeforeUnmount(() => {
   if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)

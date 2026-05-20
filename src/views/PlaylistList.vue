@@ -35,10 +35,19 @@
         <div
           v-for="(pl, i) in filtered"
           :key="pl.id"
-          class="animate-slide-up"
+          class="animate-slide-up relative group"
           :style="{ animationDelay: `${i * 50}ms` }"
         >
           <PlaylistCard :playlist="pl" />
+          <button
+            class="absolute top-2 right-2 w-8 h-8 rounded-xl bg-white/90 hover:bg-red-50 text-red-400 hover:text-red-500 shadow-sm border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            @click.stop="deletePlaylist(pl)"
+            aria-label="Eliminar lista"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -72,6 +81,11 @@ const filtered = computed(() => {
   const q = query.value.toLowerCase()
   return store.sortedPlaylists.filter((p) => p.name.toLowerCase().includes(q))
 })
+
+function deletePlaylist(pl) {
+  if (!confirm(`¿Eliminar "${pl.name}"?\nEsta acción no se puede deshacer.`)) return
+  store.remove(pl.id)
+}
 
 onMounted(() => {
   if (!store.loaded) store.load()

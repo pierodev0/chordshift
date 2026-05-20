@@ -4,6 +4,15 @@
       <template #actions>
         <AppIconButton
           v-if="playlist"
+          @click="deletePlaylist"
+          aria-label="Eliminar lista"
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-400">
+            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+          </svg>
+        </AppIconButton>
+        <AppIconButton
+          v-if="playlist"
           @click="editing = !editing"
           :aria-label="editing ? 'Terminar' : 'Editar'"
         >
@@ -153,6 +162,13 @@ function saveSongs() {
 
 function removeSong(songId) {
   playlistsStore.removeSong(route.params.id, songId)
+}
+
+function deletePlaylist() {
+  if (!playlist.value) return
+  if (!confirm('¿Eliminar lista?\nEsta acción no se puede deshacer.')) return
+  playlistsStore.remove(playlist.value.id)
+  router.push({ name: 'playlists' })
 }
 
 onMounted(() => {

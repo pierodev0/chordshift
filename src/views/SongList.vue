@@ -25,10 +25,19 @@
         <div
           v-for="(song, i) in filtered"
           :key="song.id"
-          class="animate-slide-up"
+          class="animate-slide-up relative group"
           :style="{ animationDelay: `${i * 50}ms` }"
         >
           <SongCard :song="song" />
+          <button
+            class="absolute top-2 right-2 w-8 h-8 rounded-xl bg-white/90 hover:bg-red-50 text-red-400 hover:text-red-500 shadow-sm border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            @click.stop="deleteSong(song)"
+            aria-label="Eliminar canción"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -49,13 +58,17 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
+import { useAudioCache } from '../composables/useAudioCache'
 import AppInput from '../components/AppInput.vue'
 import SongCard from '../components/SongCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 import TabBar from '../components/TabBar.vue'
 
 const store = useSongsStore()
+const { deleteAudio } = useAudioCache()
+const router = useRouter()
 const query = ref('')
 
 const filtered = computed(() => {
@@ -67,6 +80,14 @@ const filtered = computed(() => {
       s.artist.toLowerCase().includes(q),
   )
 })
+
+async function deleteSong(song) {
+  if (!confirm(`¿Eliminar "${song.title}"?\nEsta acción no se puede deshacer.`)) return
+  if (song.audioKey) {
+    await deleteAudio(song.id)
+  }
+  store.remove(song.id)
+}
 
 onMounted(() => {
   if (!store.loaded) store.load()
