@@ -235,6 +235,7 @@ let markerRegions = new Map()
 let loopWsRegion = null
 let wsReady = false
 let suppressRegionCreate = false
+let restoring = false
 
 const displayedBeats = computed(() => beatTimes.value.slice(0, 40))
 
@@ -378,6 +379,9 @@ function autoSave() {
   store.update(song.value.id, {
     markers: JSON.parse(JSON.stringify(markers.value)),
     loops: JSON.parse(JSON.stringify(loops.value)),
+    activeFrom: activeFrom.value,
+    activeTo: activeTo.value,
+    loopEnabled: loopEnabled.value,
   })
 }
 
@@ -386,9 +390,9 @@ function saveAndGoBack() {
   router.push({ name: 'song-detail', params: { id: route.params.id } })
 }
 
-watch(activeFrom, () => { updateLoopRegion(); autoSave() })
-watch(activeTo, () => { updateLoopRegion(); autoSave() })
-watch(loopEnabled, () => { updateLoopRegion() })
+watch(activeFrom, () => { if (!restoring) { updateLoopRegion(); autoSave() } })
+watch(activeTo, () => { if (!restoring) { updateLoopRegion(); autoSave() } })
+watch(loopEnabled, () => { if (!restoring) { updateLoopRegion(); autoSave() } })
 
 watch(snapEnabled, (val) => {
   if (val && snapToBeat) {
@@ -439,6 +443,19 @@ onMounted(async () => {
   if (song.value.loops?.length) {
     loops.value = JSON.parse(JSON.stringify(song.value.loops))
   }
+  restoring = true
+  if (song.value.activeFrom && markers.value.some((m) => m.id === song.value.activeFrom)) {
+    activeFrom.value = song.value.activeFrom
+  }
+  if (song.value.activeTo && markers.value.some((m) => m.id === song.value.activeTo)) {
+    activeTo.value = song.value.activeTo
+  }
+  if (song.value.loopEnabled) {
+    loopEnabled.value = true
+  }
+  restoring = false
+  updateLoopRegion()
+  autoSave()
 
   if (audioBuffer && !detected.value) {
     detect(audioBuffer)
