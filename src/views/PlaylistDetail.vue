@@ -46,26 +46,47 @@
       </div>
 
       <div v-else class="flex-1 overflow-y-auto px-4 pb-4">
-        <div class="flex flex-col gap-3 pt-3">
-          <div
-            v-for="(songId, i) in playlist.songIds"
-            :key="songId"
-            class="relative"
-          >
-            <SongCard v-if="getSong(songId)" :song="getSong(songId)" />
-            <div v-else class="bg-white rounded-xl border border-border p-4 text-ink-subtle text-sm">
-              Canción eliminada
+        <draggable
+          v-model="dragItems"
+          item-key="id"
+          tag="div"
+          class="flex flex-col gap-3 pt-3"
+          :disabled="!editing"
+          :handle="editing ? '.drag-handle' : undefined"
+          @end="saveOrder"
+        >
+          <template #item="{ element }">
+            <div class="flex items-center gap-2 group/item">
+              <div
+                v-if="editing"
+                class="drag-handle w-9 h-9 rounded-xl flex items-center justify-center text-ink-subtle cursor-grab active:cursor-grabbing hover:bg-accent-subtle transition-colors shrink-0 touch-none"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <circle cx="5" cy="3" r="1.5"/>
+                  <circle cx="11" cy="3" r="1.5"/>
+                  <circle cx="5" cy="8" r="1.5"/>
+                  <circle cx="11" cy="8" r="1.5"/>
+                  <circle cx="5" cy="13" r="1.5"/>
+                  <circle cx="11" cy="13" r="1.5"/>
+                </svg>
+              </div>
+              <div class="relative flex-1 min-w-0">
+                <SongCard v-if="getSong(element.id)" :song="getSong(element.id)" />
+                <div v-else class="bg-white rounded-xl border border-border p-4 text-ink-subtle text-sm">
+                  Canción eliminada
+                </div>
+                <button
+                  v-if="editing"
+                  class="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-sm shadow-md cursor-pointer border-none hover:bg-red-600 transition-colors z-10"
+                  @click.stop="removeSong(element.id)"
+                  aria-label="Quitar canción"
+                >
+                  ×
+                </button>
+              </div>
             </div>
-            <button
-              v-if="editing"
-              class="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-sm shadow-md cursor-pointer border-none hover:bg-red-600 transition-colors z-10"
-              @click.stop="removeSong(songId)"
-              aria-label="Quitar canción"
-            >
-              ×
-            </button>
-          </div>
-        </div>
+          </template>
+        </draggable>
       </div>
 
       <button
@@ -121,10 +142,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { usePlaylistsStore } from '../stores/playlistsStore'
+import draggable from 'vuedraggable'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import AppIconButton from '../components/AppIconButton.vue'
 import AppButton from '../components/AppButton.vue'
@@ -141,6 +163,26 @@ const selectedIds = ref([])
 
 const playlist = computed(() => playlistsStore.getById(route.params.id))
 const allSongs = computed(() => songsStore.sortedSongs.filter((s) => !playlist.value?.songIds.includes(s.id)))
+
+const dragItems = ref([])
+let syncing = false
+
+watch(playlist, (pl) => {
+  if (syncing) return
+  if (pl) {
+    dragItems.value = pl.songIds.map((id) => ({ id }))
+  } else {
+    dragItems.value = []
+  }
+}, { immediate: true })
+
+function saveOrder() {
+  if (!playlist.value) return
+  const newOrder = dragItems.value.map((item) => item.id)
+  syncing = true
+  playlistsStore.update(playlist.value.id, { songIds: newOrder })
+  syncing = false
+}
 
 function getSong(id) {
   return songsStore.getById(id)
