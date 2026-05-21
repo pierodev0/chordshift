@@ -10,7 +10,7 @@
       <div v-if="loading" class="absolute inset-0 flex items-center justify-center text-ink-soft text-sm z-10 bg-paper">
         Cargando audio...
       </div>
-      <div ref="waveformRef" class="h-full" :class="{ 'invisible': loading }" />
+      <div ref="waveformRef" class="h-full touch-none" :class="{ 'invisible': loading }" />
     </div>
 
     <div v-if="!loading" class="flex items-center gap-2 px-4 py-2 bg-white border-t border-border shrink-0">
