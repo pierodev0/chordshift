@@ -312,7 +312,6 @@ import SpeedSheet from '../components/SpeedSheet.vue'
 import WaveSurfer from 'wavesurfer.js'
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js'
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js'
-import { Time } from 'tone'
 
 const route = useRoute()
 const router = useRouter()
@@ -371,11 +370,11 @@ function formatTime(t) {
 
 function timeToParts(t) {
   if (!t || isNaN(t)) return { m: 0, s: 0, ms: 0 }
-  const ms = Math.round(new Time(t).toSeconds() * 1000)
+  const totalMs = Math.round(t * 1000)
   return {
-    m: Math.floor(ms / 60000),
-    s: Math.floor((ms % 60000) / 1000),
-    ms: ms % 1000,
+    m: Math.floor(totalMs / 60000),
+    s: Math.floor((totalMs % 60000) / 1000),
+    ms: totalMs % 1000,
   }
 }
 
