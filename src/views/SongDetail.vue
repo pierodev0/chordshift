@@ -283,7 +283,7 @@ async function loadSongAudio() {
   }
 }
 
-watch(song, () => { loadSongAudio() }, { immediate: true })
+watch(() => song.value?.audioKey, (key) => { if (key) loadSongAudio() }, { immediate: true })
 
 async function deleteSong() {
   if (!song.value) return
@@ -356,29 +356,29 @@ const keyText = computed(() =>
     : 'Original → ' + (currentStep.value > 0 ? '+' : '') + currentStep.value,
 )
 
-const renderedHtml = computed(() => {
-  if (!song.value) return ''
+const cachedHtml = computed(() => {
+  if (!song.value) return []
   const lines = song.value.content.split('\n')
-  const rendered = []
-
-  for (let i = 0; i < lines.length; i++) {
-    if (!lineIsVisible(i)) continue
-
-    const line = lines[i]
-    let processed
+  return lines.map((line) => {
     if (isChordLine(line)) {
-      processed = line.replace(chordRegex, (match, root, bass) => {
+      return line.replace(chordRegex, (match, root, bass) => {
         const transRoot = transposeNote(root, currentStep.value)
         const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
         return `<strong>${transRoot}${transBass}</strong>`
       })
-    } else {
-      processed = escapeHTML(line)
     }
-    rendered.push(`<div id="line-${i}">${processed}</div>`)
-  }
+    return escapeHTML(line)
+  })
+})
 
-  return rendered.join('')
+const renderedHtml = computed(() => {
+  if (!cachedHtml.value.length) return ''
+  return cachedHtml.value
+    .map((processed, i) => {
+      if (!lineIsVisible(i)) return ''
+      return `<div id="line-${i}">${processed}</div>`
+    })
+    .join('')
 })
 
 const chords = computed(() => {

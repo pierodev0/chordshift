@@ -1,15 +1,28 @@
 const STORAGE_KEY = 'chordshift-songs'
+let _cache = null
 
 function loadAll() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-  } catch {
-    return []
+  if (_cache === null) {
+    try {
+      _cache = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+    } catch {
+      _cache = []
+    }
   }
+  return _cache
 }
 
-function saveAll(songs) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(songs))
+function saveAll() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(_cache))
+}
+
+// Invalidate cache when another tab changes localStorage
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) {
+      _cache = null
+    }
+  })
 }
 
 export const localStorageAdapter = {
@@ -24,7 +37,7 @@ export const localStorageAdapter = {
   create(song) {
     const songs = loadAll()
     songs.unshift(song)
-    saveAll(songs)
+    saveAll()
     return song
   },
 
@@ -33,12 +46,12 @@ export const localStorageAdapter = {
     const i = songs.findIndex((s) => s.id === song.id)
     if (i === -1) return null
     songs[i] = { ...songs[i], ...song, updatedAt: Date.now() }
-    saveAll(songs)
+    saveAll()
     return songs[i]
   },
 
   delete(id) {
-    const songs = loadAll().filter((s) => s.id !== id)
-    saveAll(songs)
+    _cache = loadAll().filter((s) => s.id !== id)
+    saveAll()
   },
 }

@@ -2,13 +2,31 @@ const DB_NAME = 'chord-audio'
 const STORE_NAME = 'files'
 const DB_VERSION = 1
 
+let _dbPromise = null
+
 function openDB() {
-  return new Promise((resolve, reject) => {
+  if (_dbPromise) return _dbPromise
+  _dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
     req.onupgradeneeded = () => req.result.createObjectStore(STORE_NAME)
     req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
+    req.onerror = () => {
+      _dbPromise = null
+      reject(req.error)
+    }
   })
+  return _dbPromise
+}
+
+export function closeDB() {
+  if (_dbPromise) {
+    _dbPromise.then((db) => db.close())
+    _dbPromise = null
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => closeDB())
 }
 
 export function useAudioCache() {

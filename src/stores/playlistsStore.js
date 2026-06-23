@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { uuid } from '../utils/uuid'
 
+const STORAGE_KEY = 'chordshift-playlists'
+
 function loadAll() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
@@ -39,28 +41,22 @@ export const usePlaylistsStore = defineStore('playlists', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }
-    const all = loadAll()
-    all.unshift(playlist)
-    saveAll(all)
     playlists.value.unshift(playlist)
+    saveAll(playlists.value)
     return playlist
   }
 
   function update(id, data) {
-    const all = loadAll()
-    const i = all.findIndex((p) => p.id === id)
+    const i = playlists.value.findIndex((p) => p.id === id)
     if (i === -1) return null
-    all[i] = { ...all[i], ...data, updatedAt: Date.now() }
-    saveAll(all)
-    const j = playlists.value.findIndex((p) => p.id === id)
-    if (j !== -1) playlists.value[j] = all[i]
-    return all[i]
+    playlists.value[i] = { ...playlists.value[i], ...data, updatedAt: Date.now() }
+    saveAll(playlists.value)
+    return playlists.value[i]
   }
 
   function remove(id) {
-    const all = loadAll().filter((p) => p.id !== id)
-    saveAll(all)
     playlists.value = playlists.value.filter((p) => p.id !== id)
+    saveAll(playlists.value)
   }
 
   function addSong(playlistId, songId) {
