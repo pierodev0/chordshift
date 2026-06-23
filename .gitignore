@@ -27,3 +27,4 @@ dist-ssr
 .atl/
 # PWA dev service worker
 dev-dist/
+.codegraph/
