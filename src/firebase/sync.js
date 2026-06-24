@@ -75,6 +75,9 @@ export async function downloadAndMergeState() {
   const { changed, data } = mergeState(localData, cloudData)
   if (!changed || !data) return { changed: false }
 
+  const cloudTime = cloudData.updatedAt?.toMillis?.() || cloudData.updatedAt || 0
+  setSyncMeta({ ...localData, _syncedAt: cloudTime })
+
   const imported = importSyncState(data)
   return { changed: true, ...imported }
 }
@@ -114,32 +117,37 @@ export async function syncNow() {
   await uploadState()
 }
 
+let _syncInitialSkip = false
+
 export function startSyncListener(callback) {
-  if (_listenerUnsub) {
-    _listenerUnsub()
-    _listenerUnsub = null
-  }
+  if (_listenerUnsub) return
 
   const u = user.value
   if (!u) return
-
-  // Skip first snapshot (current data already loaded by downloadAndMergeState)
-  let skippedFirst = false
 
   _listenerUnsub = onSnapshot(
     getStateDocRef(u.uid),
     { includeMetadataChanges: false },
     (snap) => {
-      if (!skippedFirst) {
-        skippedFirst = true
+      if (!_syncInitialSkip) {
+        _syncInitialSkip = true
         return
       }
 
       const cloudData = snap.data()
       if (!cloudData) return
 
-      const imported = importSyncState(cloudData.data || {})
-      callback(imported)
+      if (cloudData.deviceId === getDeviceId()) return
+
+      const meta = getSyncMeta()
+      const localTime = meta._syncedAt || 0
+      const cloudTime = cloudData.updatedAt?.toMillis?.() || cloudData.updatedAt || 0
+
+      if (cloudTime > localTime) {
+        const imported = importSyncState(cloudData.data || {})
+        callback(imported)
+        setSyncMeta({ ...meta, _syncedAt: cloudTime })
+      }
     },
     (err) => {
       console.error('Sync listener error, will retry:', err)
@@ -154,6 +162,7 @@ export function stopSyncListener() {
     _listenerUnsub()
     _listenerUnsub = null
   }
+  _syncInitialSkip = false
 }
 
 export async function saveBackup(label) {
