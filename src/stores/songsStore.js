@@ -55,5 +55,20 @@ export const useSongsStore = defineStore('songs', () => {
     songs.value = songs.value.filter((s) => s.id !== id)
   }
 
-  return { songs, loaded, sortedSongs, getById, create, update, remove, load }
+  function exportAll() {
+    return localStorageAdapter.getAll()
+  }
+
+  function importAll(songs) {
+    localStorageAdapter.replaceAll(songs)
+    songs.value = [...songs]
+    loaded.value = true
+  }
+
+  function clearAll() {
+    localStorageAdapter.clearAll()
+    songs.value = []
+  }
+
+  return { songs, loaded, sortedSongs, getById, create, update, remove, load, exportAll, importAll, clearAll }
 })

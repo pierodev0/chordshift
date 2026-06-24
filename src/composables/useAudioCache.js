@@ -90,5 +90,16 @@ export function useAudioCache() {
     })
   }
 
-  return { saveAudio, loadAudio, loadAudioBlob, loadAudioBuffer, deleteAudio }
+  async function clearAll() {
+    const db = await openDB()
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    const store = tx.objectStore(STORE_NAME)
+    store.clear()
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve
+      tx.onerror = () => reject(tx.error)
+    })
+  }
+
+  return { saveAudio, loadAudio, loadAudioBlob, loadAudioBuffer, deleteAudio, clearAll }
 }

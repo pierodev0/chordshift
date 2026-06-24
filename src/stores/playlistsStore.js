@@ -71,8 +71,23 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     update(playlistId, { songIds: p.songIds.filter((id) => id !== songId) })
   }
 
+  function exportAll() {
+    return loadAll()
+  }
+
+  function replaceAll(items) {
+    playlists.value = items
+    saveAll(items)
+  }
+
+  function clearAll() {
+    playlists.value = []
+    saveAll([])
+  }
+
   return {
     playlists, loaded, sortedPlaylists,
     getById, create, update, remove, addSong, removeSong, load,
+    exportAll, replaceAll, clearAll,
   }
 })

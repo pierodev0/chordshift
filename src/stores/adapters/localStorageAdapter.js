@@ -54,4 +54,14 @@ export const localStorageAdapter = {
     _cache = loadAll().filter((s) => s.id !== id)
     saveAll()
   },
+
+  replaceAll(songs) {
+    _cache = songs
+    saveAll()
+  },
+
+  clearAll() {
+    _cache = []
+    saveAll()
+  },
 }

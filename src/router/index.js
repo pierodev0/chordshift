@@ -46,6 +46,11 @@ const routes = [
     name: 'song-audio',
     component: () => import('../views/AudioLab.vue'),
   },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('../views/SettingsView.vue'),
+  },
 ]
 
 export default createRouter({
