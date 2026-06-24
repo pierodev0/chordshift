@@ -193,9 +193,13 @@ async function login() {
   try {
     await loginGoogle()
   } catch (err) {
-    if (err.code !== 'auth/popup-blocked') {
-      alert('Error al iniciar sesión: ' + err.message)
-    }
+    console.error('Login error:', err)
+    const msg = err.code === 'auth/popup-blocked'
+      ? 'El navegador bloqueó la ventana emergente. Permití popups para este sitio e intentá de nuevo.'
+      : err.code === 'auth/unauthorized-domain'
+        ? 'Este dominio no está autorizado en Firebase Console. Agregá "chordshift-tawny.vercel.app" en Authentication > Settings.'
+        : 'Error al iniciar sesión: ' + (err.message || err)
+    alert(msg)
   }
 }
 

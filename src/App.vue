@@ -21,46 +21,41 @@ const playlistsStore = usePlaylistsStore()
 let unsubAuth = null
 let unsubData = null
 
+function applySyncData(merged) {
+  if (!merged.changed) return
+  if (merged.songs) songsStore.importAll(merged.songs)
+  if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
+}
+
+function onSyncUpdate(merged) {
+  if (merged.songs) songsStore.importAll(merged.songs)
+  if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
+}
+
 onMounted(() => {
   songsStore.load()
   playlistsStore.load()
 
   handleRedirectResult().then((result) => {
     if (result?.user) {
-      downloadAndMergeState().then((merged) => {
-        if (merged.changed) {
-          if (merged.songs) songsStore.importAll(merged.songs)
-          if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
-        }
-        startSyncListener((merged) => {
-          if (merged.songs) songsStore.importAll(merged.songs)
-          if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
-        })
-      })
+      downloadAndMergeState().then(applySyncData).then(() => {
+        startSyncListener(onSyncUpdate)
+      }).catch((err) => console.error('Redirect sync error:', err))
     }
-  })
+  }).catch(() => {})
 
   unsubAuth = observeAuth((u) => {
     if (u) {
-      downloadAndMergeState().then((merged) => {
-        if (merged.changed) {
-          if (merged.songs) songsStore.importAll(merged.songs)
-          if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
-        }
-        startSyncListener((merged) => {
-          if (merged.songs) songsStore.importAll(merged.songs)
-          if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
-        })
-      })
+      downloadAndMergeState().then(applySyncData).then(() => {
+        startSyncListener(onSyncUpdate)
+      }).catch((err) => console.error('Auth sync error:', err))
     } else {
       stopSyncListener()
     }
   })
 
-  unsubData = (e) => {
-    if (e.type === 'chordshift-data-changed') {
-      scheduleCloudSync()
-    }
+  unsubData = () => {
+    scheduleCloudSync()
   }
   window.addEventListener('chordshift-data-changed', unsubData)
 })
