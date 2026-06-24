@@ -4,7 +4,9 @@ import { getAuth } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: "AIzaSyC2qq6Ctf2X_bOlqXdSb1Sz82JhW-VFayM",
-  authDomain: "chordshift-8dce2.firebaseapp.com",
+  authDomain: import.meta.env.DEV
+    ? "chordshift-8dce2.firebaseapp.com"
+    : window.location.hostname,
   projectId: "chordshift-8dce2",
   storageBucket: "chordshift-8dce2.firebasestorage.app",
   messagingSenderId: "440481801297",
