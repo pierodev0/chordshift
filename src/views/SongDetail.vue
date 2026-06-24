@@ -136,7 +136,7 @@
           <ChordLegend :chords="chords" />
         </div>
 
-        <div class="font-mono text-sm leading-relaxed whitespace-pre-wrap" :class="markers.length > 0 || validLoops.length > 0 ? 'pb-40' : 'pb-24'" v-html="renderedHtml" />
+        <div class="font-mono text-sm sm:text-base lg:text-lg leading-relaxed whitespace-pre-wrap" :class="markers.length > 0 || validLoops.length > 0 ? 'pb-40' : 'pb-24'" v-html="renderedHtml" />
       </div>
 
       <button
