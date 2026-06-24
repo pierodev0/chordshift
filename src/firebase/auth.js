@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   getRedirectResult,
   signOut,
   onAuthStateChanged,
@@ -12,8 +13,16 @@ const provider = new GoogleAuthProvider()
 export const user = ref(null)
 
 export async function loginGoogle() {
-  const result = await signInWithPopup(auth, provider)
-  return result
+  try {
+    const result = await signInWithPopup(auth, provider)
+    return result
+  } catch (err) {
+    if (err.code === 'auth/popup-blocked') {
+      await signInWithRedirect(auth, provider)
+      return null
+    }
+    throw err
+  }
 }
 
 export async function handleRedirectResult() {
