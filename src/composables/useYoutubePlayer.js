@@ -34,6 +34,8 @@ export function useYoutubePlayer() {
   let player = null
   let pollInterval = null
   const isReady = ref(false)
+  const currentTime = ref(0)
+  const duration = ref(0)
 
   async function initPlayer(containerId, videoId, callbacks = {}) {
     await ensureApiLoaded()
@@ -59,6 +61,8 @@ export function useYoutubePlayer() {
             if (!player || !player.getCurrentTime) return
             const ct = player.getCurrentTime()
             const dur = player.getDuration()
+            currentTime.value = ct
+            duration.value = dur
             if (callbacks.onTimeUpdate) callbacks.onTimeUpdate(ct, dur)
           }, 250)
         },
@@ -120,5 +124,5 @@ export function useYoutubePlayer() {
     destroy()
   })
 
-  return { isReady, initPlayer, cueVideo, play, pause, seek, setPlaybackRate, destroy }
+  return { isReady, currentTime, duration, initPlayer, cueVideo, play, pause, seek, setPlaybackRate, destroy }
 }

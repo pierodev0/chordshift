@@ -56,17 +56,30 @@
       <template v-if="showYoutube">
         <div class="flex items-center gap-2.5 px-4 py-2.5 bg-white border-b border-border shrink-0">
           <button
-            class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
-            :class="autoScrolling ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
-            @click="autoScrolling = !autoScrolling"
-            aria-label="Autoscroll"
+            class="w-9 h-9 rounded-full bg-accent text-white flex items-center justify-center border-none cursor-pointer hover:bg-accent-hover transition-colors shrink-0 active:scale-90"
+            @click="toggleYtPlay"
+            aria-label="Reproducir"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            <svg v-if="!ytPlaying" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5,3 19,12 5,21" />
+            </svg>
+            <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16" rx="1" />
+              <rect x="14" y="4" width="4" height="16" rx="1" />
             </svg>
           </button>
+
+          <div
+            class="flex-1 h-1.5 rounded-full bg-border cursor-pointer relative overflow-hidden"
+            @click="seekYt"
+          >
+            <div class="h-full rounded-full bg-accent transition-[width] duration-200" :style="{ width: ytProgress + '%' }" />
+          </div>
+
+          <span class="text-[11px] text-ink-soft font-mono tabular-nums w-[80px] text-right shrink-0">
+            {{ ytDisplayTime }}
+          </span>
+
           <button
             class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 gap-[2px]"
             :class="autoScrolling && scrollDelay !== 'auto' ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
@@ -79,14 +92,38 @@
             </svg>
             <span class="text-[9px] font-bold">{{ ytDelayLabel }}</span>
           </button>
+
+          <button
+            class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
+            :class="autoScrolling ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+            @click="autoScrolling = !autoScrolling"
+            aria-label="Autoscroll"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <polyline points="23 4 23 10 17 10" />
+              <polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+          </button>
         </div>
+
+      </template>
+
+      <div
+        v-if="showYoutube"
+        class="fixed bottom-4 right-4 z-50 w-1/2 md:w-1/3 rounded-xl overflow-hidden shadow-2xl bg-white"
+      >
         <YoutubePlayer
+          ref="ytPlayerRef"
           :videoId="youtubeVideoId"
+          :expanded="true"
           :totalLines="totalLines"
           :autoScrolling="autoScrolling"
           @timeupdate="onYoutubeTimeUpdate"
+          @play="ytPlaying = true"
+          @pause="ytPlaying = false"
         />
-      </template>
+      </div>
 
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-4 scroll-smooth">
         <div class="pt-4 pb-1">
@@ -103,7 +140,8 @@
       </div>
 
       <button
-        class="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-accent text-white border-none shadow-xl shadow-accent/30 transition-all duration-200 hover:bg-accent-hover hover:shadow-accent/40 active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
+        class="fixed w-14 h-14 rounded-full bg-accent text-white border-none shadow-xl shadow-accent/30 transition-all duration-200 hover:bg-accent-hover hover:shadow-accent/40 active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
+        :class="transposePos"
         @click="showSheet = true"
         aria-label="Transponer"
       >
@@ -116,7 +154,8 @@
 
       <button
         v-if="sections.length > 0"
-        class="fixed bottom-6 left-6 w-14 h-14 rounded-full bg-white border border-border text-ink shadow-xl transition-all duration-200 hover:bg-surface hover:shadow-md active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
+        class="fixed w-14 h-14 rounded-full bg-white border border-border text-ink shadow-xl transition-all duration-200 hover:bg-surface hover:shadow-md active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
+        :class="sectionsPos"
         @click="showSectionSheet = true"
         aria-label="Secciones"
       >
@@ -128,8 +167,8 @@
 
       <button
         v-if="markers.length > 0 || validLoops.length > 0"
-        class="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-white border border-border text-ink shadow-xl transition-all duration-200 hover:bg-surface hover:shadow-md active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
-        :class="loopEnabled ? 'text-accent border-accent bg-accent-subtle' : ''"
+        class="fixed w-14 h-14 rounded-full bg-white border border-border text-ink shadow-xl transition-all duration-200 hover:bg-surface hover:shadow-md active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
+        :class="[loopsPos, loopEnabled ? 'text-accent border-accent bg-accent-subtle' : '']"
         @click="showLoopSheet = true"
         aria-label="Bucles"
       >
@@ -302,6 +341,13 @@ const showYoutube = computed(() => youtubeVideoId.value && (!hasBothSources.valu
 const scrollDelay = ref('auto')
 const ytDuration = ref(0)
 const autoDelayValue = ref(0)
+const ytPlayerRef = ref(null)
+const ytPlaying = ref(false)
+const ytCurrentTime = ref(0)
+const ytProgress = ref(0)
+const transposePos = 'bottom-4 left-4'
+const sectionsPos = 'bottom-4 left-[80px]'
+const loopsPos = 'bottom-4 left-[156px]'
 
 const ytDelayLabel = computed(() => {
   const d = scrollDelay.value
@@ -311,6 +357,33 @@ const ytDelayLabel = computed(() => {
   }
   return Number(d) + 's'
 })
+
+const ytDisplayTime = computed(() => {
+  return formatYtTime(ytCurrentTime.value) + ' / ' + formatYtTime(ytDuration.value)
+})
+
+function formatYtTime(t) {
+  if (!t || isNaN(t)) return '0:00'
+  const m = Math.floor(t / 60)
+  const s = Math.floor(t % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function toggleYtPlay() {
+  if (!ytPlayerRef.value) return
+  if (ytPlaying.value) {
+    ytPlayerRef.value.pause()
+  } else {
+    ytPlayerRef.value.play()
+  }
+}
+
+function seekYt(e) {
+  if (!ytPlayerRef.value || !ytDuration.value) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const x = (e.clientX - rect.left) / rect.width
+  ytPlayerRef.value.seek(x * ytDuration.value)
+}
 
 function computeAutoDelay(duration) {
   const container = scrollContainer.value
@@ -339,6 +412,9 @@ watch(() => route.params.id, () => {
   lastYtScrolledLine = -1
   autoDelayValue.value = 0
   ytDuration.value = 0
+  ytPlaying.value = false
+  ytCurrentTime.value = 0
+  ytProgress.value = 0
 })
 
 watch(song, (newSong) => {
@@ -385,9 +461,11 @@ watch(scrollDelay, (val) => {
 // --- Audio / YouTube ---
 let lastYtScrolledLine = -1
 function onYoutubeTimeUpdate(currentTime, duration) {
-  if (!autoScrolling.value || totalLines.value === 0 || !duration) return
-
+  ytCurrentTime.value = currentTime
   ytDuration.value = duration
+  ytProgress.value = duration ? (currentTime / duration) * 100 : 0
+
+  if (!autoScrolling.value || totalLines.value === 0 || !duration) return
   let effectiveDelay = 0
   if (scrollDelay.value === 'auto') {
     effectiveDelay = computeAutoDelay(duration)

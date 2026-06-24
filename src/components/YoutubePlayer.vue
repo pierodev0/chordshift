@@ -1,5 +1,5 @@
 <template>
-    <div class="px-4 py-2.5 bg-white border-b border-border shrink-0">
+    <div v-show="expanded" class="shrink-0">
         <div
             ref="playerContainer"
             class="w-full aspect-video rounded-xl overflow-hidden border border-border max-w-lg"
@@ -14,6 +14,7 @@ import { useYoutubePlayer } from "../composables/useYoutubePlayer";
 
 const props = defineProps({
     videoId: { type: String, default: "" },
+    expanded: { type: Boolean, default: false },
     autoScrolling: Boolean,
     totalLines: { type: Number, default: 0 },
 });
@@ -23,7 +24,20 @@ const emit = defineEmits(["timeupdate", "play", "pause", "ready"]);
 const containerId = "yt-player-" + Math.random().toString(36).slice(2, 8);
 const playerContainer = ref(null);
 
-const { initPlayer, cueVideo, destroy } = useYoutubePlayer();
+const {
+    isReady,
+    currentTime,
+    duration,
+    initPlayer,
+    cueVideo,
+    play,
+    pause,
+    seek,
+    setPlaybackRate,
+    destroy,
+} = useYoutubePlayer();
+
+defineExpose({ play, pause, seek, isReady, currentTime, duration });
 
 onMounted(() => {
     initPlayer(containerId, props.videoId, {
