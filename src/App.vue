@@ -1,10 +1,15 @@
 <template>
+  <OfflineBanner />
   <router-view v-slot="{ Component }">
     <transition name="page" mode="out-in">
       <component :is="Component" />
     </transition>
   </router-view>
 </template>
+
+<script setup>
+import OfflineBanner from './components/OfflineBanner.vue'
+</script>
 
 <style>
 /* Hallmark · genre: playful · theme: custom (Plume+ · Sora + JetBrains Mono)

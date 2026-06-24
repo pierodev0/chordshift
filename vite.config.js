@@ -14,7 +14,6 @@ export default defineConfig({
       devOptions: {
         enabled: true,
         type: 'module',
-        navigateFallback: '/',
       },
       manifest: {
         name: 'ChordShift — Songbook',
@@ -45,16 +44,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2,ttf}'],
+        globIgnores: ['**/sw.js', '**/workbox-*.js'],
+        navigateFallback: '/',
+        navigateFallbackAllowlist: [/^(?!\/__).*/],
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            urlPattern: /^https?:\/\/.*$/i,
-            handler: 'NetworkFirst',
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'external-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
-              },
+              cacheName: 'google-fonts',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 60 },
             },
           },
         ],
