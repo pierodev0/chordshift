@@ -46,18 +46,47 @@
         :autoScrolling="autoScrolling"
         :showLab="!!song?.audioKey"
         :loopRange="activeLoopRange"
+        :scrollDelay="scrollDelay"
         @toggleAutoScroll="autoScrolling = !autoScrolling"
         @loaded="songDuration = $event"
         @openLab="router.push({ name: 'song-audio', params: { id: song.id } })"
+        @openDelaySheet="showDelaySheet = true"
       />
 
-      <YoutubePlayer
-        v-if="showYoutube"
-        :videoId="youtubeVideoId"
-        :totalLines="totalLines"
-        :autoScrolling="autoScrolling"
-        @timeupdate="onYoutubeTimeUpdate"
-      />
+      <template v-if="showYoutube">
+        <div class="flex items-center gap-2.5 px-4 py-2.5 bg-white border-b border-border shrink-0">
+          <button
+            class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
+            :class="autoScrolling ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+            @click="autoScrolling = !autoScrolling"
+            aria-label="Autoscroll"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <polyline points="23 4 23 10 17 10" />
+              <polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+          </button>
+          <button
+            class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 gap-[2px]"
+            :class="autoScrolling && scrollDelay !== 'auto' ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+            @click="showDelaySheet = true"
+            aria-label="Delay de scroll"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span class="text-[9px] font-bold">{{ ytDelayLabel }}</span>
+          </button>
+        </div>
+        <YoutubePlayer
+          :videoId="youtubeVideoId"
+          :totalLines="totalLines"
+          :autoScrolling="autoScrolling"
+          @timeupdate="onYoutubeTimeUpdate"
+        />
+      </template>
 
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-4 scroll-smooth">
         <div class="pt-4 pb-1">
@@ -123,6 +152,8 @@
         @toggle="toggleSection"
         @toggleAll="toggleAllSections"
       />
+
+      <ScrollDelaySheet v-model="scrollDelay" :show="showDelaySheet" :autoEffective="autoDelayValue" @close="showDelaySheet = false" />
 
       <AppBottomSheet :show="showLoopSheet" @close="showLoopSheet = false">
         <template #title>
@@ -233,6 +264,7 @@ import ChordLegend from '../components/ChordLegend.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import YoutubePlayer from '../components/YoutubePlayer.vue'
 import TransposeSheet from '../components/TransposeSheet.vue'
+import ScrollDelaySheet from '../components/ScrollDelaySheet.vue'
 import { extractYoutubeId } from '../utils/youtube'
 import SectionNavSheet from '../components/SectionNavSheet.vue'
 
@@ -252,6 +284,7 @@ const autoScrolling = ref(true)
 const songDuration = ref(0)
 const scrollContainer = ref(null)
 const showLoopSheet = ref(false)
+const showDelaySheet = ref(false)
 const loopEnabled = ref(false)
 const localFrom = ref('')
 const localTo = ref('')
@@ -266,12 +299,46 @@ const sourceTab = ref('mp3')
 const showMp3 = computed(() => song.value?.audioKey && (!hasBothSources.value || sourceTab.value === 'mp3'))
 const showYoutube = computed(() => youtubeVideoId.value && (!hasBothSources.value || sourceTab.value === 'youtube'))
 
+const scrollDelay = ref('auto')
+const ytDuration = ref(0)
+const autoDelayValue = ref(0)
+
+const ytDelayLabel = computed(() => {
+  const d = scrollDelay.value
+  if (d === 'auto') {
+    const ae = autoDelayValue.value
+    return ae > 0 ? `Auto(${ae}s)` : 'Auto'
+  }
+  return Number(d) + 's'
+})
+
+function computeAutoDelay(duration) {
+  const container = scrollContainer.value
+  if (!container || totalLines.value === 0 || !duration) return 0
+  const firstLine = document.getElementById('line-0')
+  if (!firstLine) return 0
+  const lineHeight = firstLine.offsetHeight
+  const visibleLines = Math.ceil(container.clientHeight / lineHeight)
+  const secondsPerLine = duration / totalLines.value
+  return Math.round((visibleLines / 3) * secondsPerLine)
+}
+
+watch(showDelaySheet, (shown) => {
+  if (shown && scrollDelay.value === 'auto') {
+    const dur = ytDuration.value || songDuration.value
+    autoDelayValue.value = computeAutoDelay(dur)
+  }
+})
+
 watch(() => route.params.id, () => {
   showSheet.value = false
   showSectionSheet.value = false
   autoScrolling.value = false
   audioUrl.value = null
   sourceTab.value = 'mp3'
+  lastYtScrolledLine = -1
+  autoDelayValue.value = 0
+  ytDuration.value = 0
 })
 
 watch(song, (newSong) => {
@@ -280,6 +347,7 @@ watch(song, (newSong) => {
     loopEnabled.value = newSong.loopEnabled ?? false
     localFrom.value = newSong.activeFrom ?? ''
     localTo.value = newSong.activeTo ?? ''
+    scrollDelay.value = newSong.scrollDelay !== undefined ? newSong.scrollDelay : 'auto'
   }
 }, { immediate: true })
 
@@ -307,12 +375,36 @@ watch(currentStep, (step) => {
   }
 })
 
+// --- Scroll Delay ---
+watch(scrollDelay, (val) => {
+  if (song.value) {
+    store.update(song.value.id, { scrollDelay: val })
+  }
+})
+
 // --- Audio / YouTube ---
+let lastYtScrolledLine = -1
 function onYoutubeTimeUpdate(currentTime, duration) {
   if (!autoScrolling.value || totalLines.value === 0 || !duration) return
-  const idx = Math.min(Math.floor((currentTime / duration) * totalLines.value), totalLines.value - 1)
-  const el = document.getElementById(`line-${idx}`)
-  if (el) el.scrollIntoView({ block: 'start' })
+
+  ytDuration.value = duration
+  let effectiveDelay = 0
+  if (scrollDelay.value === 'auto') {
+    effectiveDelay = computeAutoDelay(duration)
+    if (effectiveDelay > 0) autoDelayValue.value = effectiveDelay
+  } else {
+    effectiveDelay = Number(scrollDelay.value) || 0
+  }
+
+  const scrollTime = Math.max(0, currentTime - effectiveDelay)
+  const idx = Math.min(Math.floor((scrollTime / duration) * totalLines.value), totalLines.value - 1)
+  if (idx !== lastYtScrolledLine) {
+    const el = document.getElementById(`line-${idx}`)
+    if (el) {
+      el.scrollIntoView({ block: 'start' })
+      lastYtScrolledLine = idx
+    }
+  }
 }
 
 async function loadSongAudio() {

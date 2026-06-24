@@ -44,6 +44,25 @@
         </div>
       </div>
 
+      <div>
+        <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Scroll delay</label>
+        <div class="flex items-center gap-2 mb-2">
+          <button
+            v-for="opt in delayOptions"
+            :key="opt.value"
+            class="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors cursor-pointer"
+            :class="scrollDelay === opt.value ? 'bg-accent text-white border-accent' : 'bg-white text-ink border-border hover:bg-surface'"
+            @click="scrollDelay = opt.value"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+        <p class="text-[11px] text-ink-soft">
+          Actual: <strong class="text-ink">{{ delayDisplay }}</strong>
+          <template v-if="scrollDelay === 'auto'"> — se calcula al reproducir</template>
+        </p>
+      </div>
+
       <div class="flex-1 flex flex-col min-h-0">
         <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Letra y acordes</label>
         <textarea
@@ -94,6 +113,23 @@ const selectedFileName = ref('')
 const existingAudioName = ref('')
 const removeExistingAudio = ref(false)
 const youtubeUrl = ref('')
+const scrollDelay = ref('auto')
+
+const delayDisplay = computed(() => {
+  const v = scrollDelay.value
+  if (v === 'auto') return 'Auto'
+  return Number(v) + 's'
+})
+
+const delayOptions = [
+  { value: 'auto', label: 'Auto' },
+  { value: 0, label: '0s' },
+  { value: 1, label: '1s' },
+  { value: 2, label: '2s' },
+  { value: 3, label: '3s' },
+  { value: 5, label: '5s' },
+  { value: 10, label: '10s' },
+]
 
 function onFileSelected(e) {
   const file = e.target.files[0]
@@ -129,6 +165,7 @@ async function save() {
       capo: capo.value,
       content: content.value,
       youtubeUrl: youtubeUrl.value,
+      scrollDelay: scrollDelay.value,
       audioKey: existingAudioName.value && !removeExistingAudio.value ? route.params.id : '',
     })
     if (selectedFile.value) {
@@ -146,6 +183,7 @@ async function save() {
       capo: capo.value,
       content: content.value,
       youtubeUrl: youtubeUrl.value,
+      scrollDelay: scrollDelay.value,
     })
     if (selectedFile.value) {
       await saveAudio(song.id, selectedFile.value)
@@ -166,6 +204,7 @@ onMounted(() => {
       existingAudioName.value = 'audio.mp3'
     }
     youtubeUrl.value = existing.value.youtubeUrl || ''
+    scrollDelay.value = existing.value.scrollDelay !== undefined ? existing.value.scrollDelay : 'auto'
   }
 })
 </script>

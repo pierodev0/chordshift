@@ -79,6 +79,19 @@
       </svg>
     </button>
 
+    <button
+      class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 gap-[2px]"
+      :class="autoScrolling && props.scrollDelay !== 'auto' ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+      @click="$emit('openDelaySheet')"
+      aria-label="Delay de scroll"
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      <span class="text-[9px] font-bold">{{ delayLabel }}</span>
+    </button>
+
     <audio ref="audioEl" :src="audioUrl" @timeupdate="onTimeUpdate" @loadedmetadata="onLoaded" @ended="onEnded" />
   </div>
 
@@ -100,8 +113,9 @@ const props = defineProps({
   autoScrolling: Boolean,
   showLab: Boolean,
   loopRange: { type: Object, default: null }, // { from: number, to: number } | null
+  scrollDelay: { type: [Number, String], default: 'auto' },
 })
-const emit = defineEmits(['toggleAutoScroll', 'loaded', 'openLab'])
+const emit = defineEmits(['toggleAutoScroll', 'loaded', 'openLab', 'openDelaySheet'])
 
 const audioEl = ref(null)
 const playing = ref(false)
@@ -110,6 +124,17 @@ const duration = ref(0)
 const progress = ref(0)
 const playbackRate = ref(1)
 const showSpeedSheet = ref(false)
+let lastScrolledLine = -1
+const autoDelayValue = ref(0)
+
+const delayLabel = computed(() => {
+  const d = props.scrollDelay
+  if (d === 'auto') {
+    const ae = autoDelayValue.value
+    return ae > 0 ? `Auto(${ae}s)` : 'Auto'
+  }
+  return Number(d) + 's'
+})
 
 const displayTime = computed(() => {
   const rate = playbackRate.value
@@ -143,9 +168,29 @@ function onTimeUpdate() {
   }
 
   if (props.autoScrolling && props.totalLines > 0 && duration.value > 0) {
-    const idx = Math.min(Math.floor((t / duration.value) * props.totalLines), props.totalLines - 1)
-    const el = document.getElementById(`line-${idx}`)
-    if (el) el.scrollIntoView({ block: 'start' })
+    let effectiveDelay = 0
+    if (props.scrollDelay === 'auto') {
+      const container = document.querySelector('.overflow-y-auto')
+      const firstLine = document.getElementById('line-0')
+      if (container && firstLine) {
+        const lineHeight = firstLine.offsetHeight
+        const visibleLines = Math.ceil(container.clientHeight / lineHeight)
+        const secondsPerLine = duration.value / props.totalLines
+        effectiveDelay = Math.round((visibleLines / 3) * secondsPerLine)
+        autoDelayValue.value = effectiveDelay
+      }
+    } else {
+      effectiveDelay = Number(props.scrollDelay) || 0
+    }
+    const scrollTime = Math.max(0, t - effectiveDelay)
+    const idx = Math.min(Math.floor((scrollTime / duration.value) * props.totalLines), props.totalLines - 1)
+    if (idx !== lastScrolledLine) {
+      const el = document.getElementById(`line-${idx}`)
+      if (el) {
+        el.scrollIntoView({ block: 'start' })
+        lastScrolledLine = idx
+      }
+    }
   }
 }
 
@@ -188,6 +233,7 @@ watch(() => props.audioUrl, () => {
   duration.value = 0
   progress.value = 0
   playbackRate.value = 1
+  lastScrolledLine = -1
 })
 
 onBeforeUnmount(() => {
