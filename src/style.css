@@ -32,8 +32,6 @@ html, body {
 }
 
 body {
-  padding-inline: max(0.5rem, env(safe-area-inset-left));
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
   background: var(--color-paper);
   color: var(--color-ink);
 }
