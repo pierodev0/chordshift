@@ -8,7 +8,7 @@ export const useSongsStore = defineStore('songs', () => {
   const loaded = ref(false)
 
   function load() {
-    songs.value = localStorageAdapter.getAll()
+    songs.value = [...localStorageAdapter.getAll()]
     loaded.value = true
   }
 
