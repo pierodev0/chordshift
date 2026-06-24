@@ -25,10 +25,18 @@ export async function loginGoogle() {
   }
 }
 
-export async function handleRedirectResult() {
+export async function handleRedirectResult(timeoutMs = 5000) {
   try {
-    return await getRedirectResult(auth)
+    const result = await Promise.race([
+      getRedirectResult(auth),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs)),
+    ])
+    return result
   } catch (err) {
+    if (err.message === 'timeout') {
+      console.warn('handleRedirectResult timed out after ' + timeoutMs + 'ms')
+      return null
+    }
     console.error('Redirect result error:', err)
     return null
   }
