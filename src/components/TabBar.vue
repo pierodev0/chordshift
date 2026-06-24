@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center border-t border-border bg-white/95 backdrop-blur-sm px-2 shrink-0 relative z-10">
+  <div class="flex items-center border-t border-border bg-white/95 backdrop-blur-sm px-2 shrink-0 relative z-10" style="padding-bottom: env(safe-area-inset-bottom, 0px)">
     <router-link
       to="/"
       class="flex-1 flex flex-col items-center py-2 transition-colors no-underline"
