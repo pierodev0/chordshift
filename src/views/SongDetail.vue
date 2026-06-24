@@ -24,7 +24,23 @@
     </AppPageHeader>
 
     <template v-if="song">
+      <template v-if="hasBothSources">
+        <div class="flex bg-surface border-b border-border shrink-0 px-4 pt-2 gap-1">
+          <button
+            class="flex-1 py-2 text-xs font-semibold rounded-t-xl border border-border border-b-0 transition-colors cursor-pointer"
+            :class="sourceTab === 'mp3' ? 'bg-white text-ink shadow-sm' : 'bg-transparent text-ink-soft hover:text-ink'"
+            @click="sourceTab = 'mp3'"
+          >🎵 MP3</button>
+          <button
+            class="flex-1 py-2 text-xs font-semibold rounded-t-xl border border-border border-b-0 transition-colors cursor-pointer"
+            :class="sourceTab === 'youtube' ? 'bg-white text-ink shadow-sm' : 'bg-transparent text-ink-soft hover:text-ink'"
+            @click="sourceTab = 'youtube'"
+          >▶ YouTube</button>
+        </div>
+      </template>
+
       <AudioPlayer
+        v-if="showMp3"
         :audioUrl="audioUrl"
         :totalLines="totalLines"
         :autoScrolling="autoScrolling"
@@ -33,6 +49,14 @@
         @toggleAutoScroll="autoScrolling = !autoScrolling"
         @loaded="songDuration = $event"
         @openLab="router.push({ name: 'song-audio', params: { id: song.id } })"
+      />
+
+      <YoutubePlayer
+        v-if="showYoutube"
+        :videoId="youtubeVideoId"
+        :totalLines="totalLines"
+        :autoScrolling="autoScrolling"
+        @timeupdate="onYoutubeTimeUpdate"
       />
 
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-4 scroll-smooth">
@@ -207,7 +231,9 @@ import AppIconButton from '../components/AppIconButton.vue'
 import AppBottomSheet from '../components/AppBottomSheet.vue'
 import ChordLegend from '../components/ChordLegend.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
+import YoutubePlayer from '../components/YoutubePlayer.vue'
 import TransposeSheet from '../components/TransposeSheet.vue'
+import { extractYoutubeId } from '../utils/youtube'
 import SectionNavSheet from '../components/SectionNavSheet.vue'
 
 const { chordRegex, isChordLine, transposeNote, escapeHTML } = useChordTransposer()
@@ -233,11 +259,19 @@ const loopTab = ref('markers')
 
 const song = computed(() => store.getById(route.params.id))
 
+const youtubeVideoId = computed(() => song.value?.youtubeUrl ? extractYoutubeId(song.value.youtubeUrl) : null)
+
+const hasBothSources = computed(() => !!(song.value?.audioKey && youtubeVideoId.value))
+const sourceTab = ref('mp3')
+const showMp3 = computed(() => song.value?.audioKey && (!hasBothSources.value || sourceTab.value === 'mp3'))
+const showYoutube = computed(() => youtubeVideoId.value && (!hasBothSources.value || sourceTab.value === 'youtube'))
+
 watch(() => route.params.id, () => {
   showSheet.value = false
   showSectionSheet.value = false
   autoScrolling.value = false
   audioUrl.value = null
+  sourceTab.value = 'mp3'
 })
 
 watch(song, (newSong) => {
@@ -273,7 +307,14 @@ watch(currentStep, (step) => {
   }
 })
 
-// --- Audio ---
+// --- Audio / YouTube ---
+function onYoutubeTimeUpdate(currentTime, duration) {
+  if (!autoScrolling.value || totalLines.value === 0 || !duration) return
+  const idx = Math.min(Math.floor((currentTime / duration) * totalLines.value), totalLines.value - 1)
+  const el = document.getElementById(`line-${idx}`)
+  if (el) el.scrollIntoView({ block: 'start' })
+}
+
 async function loadSongAudio() {
   if (!song.value?.audioKey) return
   const result = await loadAudio(song.value.id)

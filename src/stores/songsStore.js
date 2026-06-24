@@ -20,7 +20,7 @@ export const useSongsStore = defineStore('songs', () => {
     return songs.value.find((s) => s.id === id) || null
   }
 
-  function create({ title, artist, content, capo, audioKey }) {
+  function create({ title, artist, content, capo, audioKey, youtubeUrl }) {
     const song = {
       id: uuid(),
       title,
@@ -28,6 +28,7 @@ export const useSongsStore = defineStore('songs', () => {
       content: content || '',
       capo: capo || '',
       audioKey: audioKey || '',
+      youtubeUrl: youtubeUrl || '',
       transpose: 0,
       markers: [],
       loops: [],

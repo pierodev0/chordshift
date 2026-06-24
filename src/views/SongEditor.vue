@@ -28,6 +28,22 @@
         </div>
       </div>
 
+      <div>
+        <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Video (YouTube)</label>
+        <div class="flex items-center gap-3 p-3 rounded-xl border border-border bg-white">
+          <input
+            v-model="youtubeUrl"
+            type="text"
+            class="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle"
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+          <span v-if="youtubeUrl" class="shrink-0 text-sm font-bold">
+            <span v-if="isValidYoutubeUrl(youtubeUrl)" class="text-green-500">✓</span>
+            <span v-else class="text-red-400">✕</span>
+          </span>
+        </div>
+      </div>
+
       <div class="flex-1 flex flex-col min-h-0">
         <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Letra y acordes</label>
         <textarea
@@ -54,6 +70,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { useAudioCache } from '../composables/useAudioCache'
+import { isValidYoutubeUrl } from '../utils/youtube'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import AppInput from '../components/AppInput.vue'
 import AppButton from '../components/AppButton.vue'
@@ -76,6 +93,7 @@ const selectedFile = ref(null)
 const selectedFileName = ref('')
 const existingAudioName = ref('')
 const removeExistingAudio = ref(false)
+const youtubeUrl = ref('')
 
 function onFileSelected(e) {
   const file = e.target.files[0]
@@ -110,6 +128,7 @@ async function save() {
       artist: artist.value,
       capo: capo.value,
       content: content.value,
+      youtubeUrl: youtubeUrl.value,
       audioKey: existingAudioName.value && !removeExistingAudio.value ? route.params.id : '',
     })
     if (selectedFile.value) {
@@ -126,6 +145,7 @@ async function save() {
       artist: artist.value,
       capo: capo.value,
       content: content.value,
+      youtubeUrl: youtubeUrl.value,
     })
     if (selectedFile.value) {
       await saveAudio(song.id, selectedFile.value)
@@ -145,6 +165,7 @@ onMounted(() => {
     if (existing.value.audioKey) {
       existingAudioName.value = 'audio.mp3'
     }
+    youtubeUrl.value = existing.value.youtubeUrl || ''
   }
 })
 </script>
