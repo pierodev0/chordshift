@@ -194,10 +194,14 @@ async function login() {
     await loginGoogle()
   } catch (err) {
     console.error('Login error:', err)
-    const msg = err.code === 'auth/unauthorized-domain'
-      ? 'Este dominio no está autorizado en Firebase Console. Agregá "chordshift-tawny.vercel.app" en Authentication > Settings.'
-      : 'Error al iniciar sesión: ' + (err.message || err)
-    alert(msg)
+    window.dispatchEvent(new CustomEvent('chordshift-toast', {
+      detail: {
+        message: err.code === 'auth/unauthorized-domain'
+          ? 'Dominio no autorizado. Agregalo en Firebase Console > Authentication > Settings.'
+          : 'Error al iniciar sesión: ' + (err.message || err),
+        type: 'error',
+      },
+    }))
   }
 }
 
@@ -219,7 +223,7 @@ async function saveCloudBackup() {
     await saveBackup()
     await fetchBackups()
   } catch {
-    alert('Error al guardar la copia')
+    window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Error al guardar la copia', type: 'error' } }))
   }
 }
 
@@ -230,9 +234,9 @@ async function restoreBackup(id) {
     if (!data) return
     if (data.songs) songsStore.importAll(data.songs)
     if (data.playlists) playlistsStore.replaceAll(data.playlists)
-    alert('Copia restaurada correctamente')
+    window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Copia restaurada correctamente', type: 'success' } }))
   } catch {
-    alert('Error al restaurar la copia')
+    window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Error al restaurar la copia', type: 'error' } }))
   }
 }
 
@@ -242,7 +246,7 @@ async function removeBackup(id) {
     await deleteBackup(id)
     backups.value = backups.value.filter((b) => b.id !== id)
   } catch {
-    alert('Error al eliminar la copia')
+    window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Error al eliminar la copia', type: 'error' } }))
   }
 }
 
@@ -292,19 +296,19 @@ async function handleImport(e) {
     const text = await file.text()
     const data = JSON.parse(text)
     if (data.version !== BACKUP_VERSION) {
-      alert('Versión de copia no compatible')
+      window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Versión de copia no compatible', type: 'error' } }))
       return
     }
     if (!Array.isArray(data.songs) || !Array.isArray(data.playlists)) {
-      alert('Copia de seguridad inválida')
+      window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Copia de seguridad inválida', type: 'error' } }))
       return
     }
     if (!confirm('¿Restaurar copia? Todos los datos actuales serán sobrescritos.')) return
     songsStore.importAll(data.songs)
     playlistsStore.replaceAll(data.playlists)
-    alert('Copia restaurada correctamente')
+    window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Copia restaurada correctamente', type: 'success' } }))
   } catch {
-    alert('Error al leer el archivo de copia')
+    window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Error al leer el archivo de copia', type: 'error' } }))
   }
 }
 
@@ -314,7 +318,7 @@ async function deleteAllData() {
   clearAudio()
   songsStore.clearAll()
   playlistsStore.clearAll()
-  alert('Todos los datos han sido eliminados')
+  window.dispatchEvent(new CustomEvent('chordshift-toast', { detail: { message: 'Todos los datos han sido eliminados', type: 'success' } }))
   router.push('/')
 }
 

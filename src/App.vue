@@ -1,5 +1,6 @@
 <template>
   <OfflineBanner />
+  <ToastNotification />
   <router-view v-slot="{ Component }">
     <transition name="page" mode="out-in">
       <component :is="Component" />
@@ -10,6 +11,7 @@
 <script setup>
 import { onMounted, onBeforeUnmount } from 'vue'
 import OfflineBanner from './components/OfflineBanner.vue'
+import ToastNotification from './components/ToastNotification.vue'
 import { handleRedirectResult, observeAuth } from './firebase/auth.js'
 import { downloadAndMergeState, startSyncListener, stopSyncListener, scheduleCloudSync } from './firebase/sync.js'
 import { useSongsStore } from './stores/songsStore.js'
