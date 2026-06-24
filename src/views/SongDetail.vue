@@ -29,12 +29,12 @@
           <button
             class="flex-1 py-2 text-xs font-semibold rounded-t-xl border border-border border-b-0 transition-colors cursor-pointer"
             :class="sourceTab === 'mp3' ? 'bg-white text-ink shadow-sm' : 'bg-transparent text-ink-soft hover:text-ink'"
-            @click="sourceTab = 'mp3'"
+            @click="setSourceTab('mp3')"
           >🎵 MP3</button>
           <button
             class="flex-1 py-2 text-xs font-semibold rounded-t-xl border border-border border-b-0 transition-colors cursor-pointer"
             :class="sourceTab === 'youtube' ? 'bg-white text-ink shadow-sm' : 'bg-transparent text-ink-soft hover:text-ink'"
-            @click="sourceTab = 'youtube'"
+            @click="setSourceTab('youtube')"
           >▶ YouTube</button>
         </div>
       </template>
@@ -385,6 +385,13 @@ function seekYt(e) {
   ytPlayerRef.value.seek(x * ytDuration.value)
 }
 
+function setSourceTab(tab) {
+  sourceTab.value = tab
+  if (song.value) {
+    store.update(song.value.id, { preferredSource: tab })
+  }
+}
+
 function computeAutoDelay(duration) {
   const container = scrollContainer.value
   if (!container || totalLines.value === 0 || !duration) return 0
@@ -408,7 +415,10 @@ watch(() => route.params.id, () => {
   showSectionSheet.value = false
   autoScrolling.value = false
   audioUrl.value = null
-  sourceTab.value = 'mp3'
+  sourceTab.value =
+    newSong?.preferredSource === 'mp3' || newSong?.preferredSource === 'youtube'
+      ? newSong.preferredSource
+      : newSong?.youtubeUrl && !newSong?.audioKey ? 'youtube' : 'mp3'
   lastYtScrolledLine = -1
   autoDelayValue.value = 0
   ytDuration.value = 0
@@ -423,6 +433,10 @@ watch(song, (newSong) => {
     loopEnabled.value = newSong.loopEnabled ?? false
     localFrom.value = newSong.activeFrom ?? ''
     localTo.value = newSong.activeTo ?? ''
+    sourceTab.value =
+      newSong.preferredSource === 'mp3' || newSong.preferredSource === 'youtube'
+        ? newSong.preferredSource
+        : newSong.youtubeUrl && !newSong.audioKey ? 'youtube' : 'mp3'
     scrollDelay.value = newSong.scrollDelay !== undefined ? newSong.scrollDelay : 'auto'
   }
 }, { immediate: true })

@@ -30,6 +30,7 @@ export const useSongsStore = defineStore('songs', () => {
       audioKey: audioKey || '',
       youtubeUrl: youtubeUrl || '',
       scrollDelay: scrollDelay !== undefined ? scrollDelay : 'auto',
+      preferredSource: '',
       transpose: 0,
       markers: [],
       loops: [],
