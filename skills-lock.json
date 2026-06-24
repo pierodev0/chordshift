@@ -4,8 +4,8 @@
     "hallmark": {
       "source": "nutlope/hallmark",
       "sourceType": "github",
-      "skillPath": "SKILL.md",
-      "computedHash": "f836c60e61c592b0663ea42cbdeb8eb80b8086f03ac435e1bd853c585ae0f7ba"
+      "skillPath": "skills/hallmark/SKILL.md",
+      "computedHash": "8a8ecafd613f09e701330b5aa4a591ac539abb2605596df4a2394f03628d1d76"
     }
   }
 }
