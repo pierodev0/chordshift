@@ -4,7 +4,7 @@
       <h1 class="text-lg font-bold text-ink tracking-tight">Ajustes</h1>
     </header>
 
-    <div class="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+    <div class="flex-1 overflow-y-auto px-4 py-6 pb-24 space-y-8">
       <section>
         <h2 class="text-[11px] font-bold text-ink-soft uppercase tracking-widest mb-3 flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -155,8 +155,6 @@
       </section>
     </div>
 
-    <TabBar activeTab="settings" />
-
     <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleImport" />
   </div>
 </template>
@@ -169,8 +167,6 @@ import { usePlaylistsStore } from '../stores/playlistsStore'
 import { useAudioCache } from '../composables/useAudioCache'
 import { user, loginGoogle, logoutGoogle } from '../firebase/auth.js'
 import { syncNow as doSyncNow, getSyncMeta, setAutoSync, saveBackup, listBackups, loadBackup, deleteBackup } from '../firebase/sync.js'
-import TabBar from '../components/TabBar.vue'
-
 const router = useRouter()
 const songsStore = useSongsStore()
 const playlistsStore = usePlaylistsStore()

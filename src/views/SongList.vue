@@ -16,7 +16,7 @@
       </AppInput>
     </div>
 
-    <div class="flex-1 overflow-y-auto px-4 pb-4">
+    <div class="flex-1 overflow-y-auto px-4 pb-20" style="padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px))">
       <EmptyState v-if="store.loaded && filtered.length === 0 && !query" />
       <div v-else-if="filtered.length === 0 && query" class="flex items-center justify-center h-full text-ink-soft text-sm">
         No se encontraron canciones para "{{ query }}"
@@ -42,8 +42,6 @@
       </div>
     </div>
 
-    <TabBar activeTab="songs" />
-
     <button
       class="fixed bottom-[72px] right-6 w-14 h-14 rounded-full bg-accent text-white border-none shadow-xl shadow-accent/30 transition-all duration-200 hover:bg-accent-hover hover:shadow-accent/40 active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-50"
       @click="$router.push({ name: 'song-new' })"
@@ -64,8 +62,6 @@ import { useAudioCache } from '../composables/useAudioCache'
 import AppInput from '../components/AppInput.vue'
 import SongCard from '../components/SongCard.vue'
 import EmptyState from '../components/EmptyState.vue'
-import TabBar from '../components/TabBar.vue'
-
 const store = useSongsStore()
 const { deleteAudio } = useAudioCache()
 const router = useRouter()

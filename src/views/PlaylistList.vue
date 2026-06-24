@@ -16,7 +16,7 @@
       </AppInput>
     </div>
 
-    <div class="flex-1 overflow-y-auto px-4 pb-4">
+    <div class="flex-1 overflow-y-auto px-4 pb-20" style="padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px))">
       <div v-if="store.loaded && filtered.length === 0 && !query" class="flex flex-col items-center justify-center h-full text-center px-6">
         <div class="w-20 h-20 rounded-2xl bg-accent-subtle flex items-center justify-center mb-4">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-accent">
@@ -52,8 +52,6 @@
       </div>
     </div>
 
-    <TabBar activeTab="playlists" />
-
     <button
       class="fixed bottom-[72px] right-6 w-14 h-14 rounded-full bg-accent text-white border-none shadow-xl shadow-accent/30 transition-all duration-200 hover:bg-accent-hover hover:shadow-accent/40 active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-50"
       @click="$router.push({ name: 'playlist-new' })"
@@ -71,8 +69,6 @@ import { ref, computed, onMounted } from 'vue'
 import { usePlaylistsStore } from '../stores/playlistsStore'
 import AppInput from '../components/AppInput.vue'
 import PlaylistCard from '../components/PlaylistCard.vue'
-import TabBar from '../components/TabBar.vue'
-
 const store = usePlaylistsStore()
 const query = ref('')
 

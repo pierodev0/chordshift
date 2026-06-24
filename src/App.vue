@@ -6,19 +6,30 @@
       <component :is="Component" />
     </transition>
   </router-view>
+  <TabBar v-if="showTabBar" :activeTab="currentTab" />
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import OfflineBanner from './components/OfflineBanner.vue'
 import ToastNotification from './components/ToastNotification.vue'
+import TabBar from './components/TabBar.vue'
 import { handleRedirectResult, observeAuth } from './firebase/auth.js'
 import { downloadAndMergeState, startSyncListener, stopSyncListener, scheduleCloudSync } from './firebase/sync.js'
 import { useSongsStore } from './stores/songsStore.js'
 import { usePlaylistsStore } from './stores/playlistsStore.js'
 
+const route = useRoute()
 const songsStore = useSongsStore()
 const playlistsStore = usePlaylistsStore()
+
+const showTabBar = computed(() =>
+  ['home', 'playlists', 'settings'].includes(route.name),
+)
+
+const tabMap = { home: 'songs', playlists: 'playlists', settings: 'settings' }
+const currentTab = computed(() => tabMap[route.name] || 'songs')
 
 let unsubAuth = null
 let unsubData = null
