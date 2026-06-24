@@ -22,6 +22,7 @@ Mobile-first PWA songbook for guitarists. Vue 3, Pinia, Tailwind v4, Firebase, p
 - UI strings in Spanish; code/comments/technical artifacts in English
 - CSS: Tailwind utilities first; scoped `<style>` for custom CSS; OKLCH tokens via `var(--color-*)`
 - Cross-component events: `window.dispatchEvent(new CustomEvent('chordshift-*'))`
+- TabBar: placed in `App.vue` outside `<router-view>` with `fixed bottom-0` positioning; hidden on detail/editor views via `route.name` check in `showTabBar` computed
 - IDs: `uuid()` from `src/utils/uuid.js`
 
 ## Firebase & sync gotchas
@@ -35,7 +36,6 @@ Mobile-first PWA songbook for guitarists. Vue 3, Pinia, Tailwind v4, Firebase, p
 
 ## Known issues
 
-- TabBar visibility in SettingsView — verify safe-area fix fully resolves this
 - Sync propagation across devices needs production testing
 - 4 local commits not yet pushed
 
