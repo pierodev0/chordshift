@@ -21,7 +21,6 @@ const SYNC_KEY = 'chordshift-cloud-sync'
 const SCHEMA_VERSION = 1
 let _syncTimer = null
 let _listenerUnsub = null
-let _initialSyncDone = false
 
 export function getSyncMeta() {
   try {
@@ -124,29 +123,30 @@ export function startSyncListener(callback) {
   const u = user.value
   if (!u) return
 
-  _initialSyncDone = false
+  // Skip first snapshot (current data already loaded by downloadAndMergeState)
+  let skippedFirst = false
 
-  _listenerUnsub = onSnapshot(getStateDocRef(u.uid), (snap) => {
-    if (!_initialSyncDone) {
-      _initialSyncDone = true
-      return
-    }
+  _listenerUnsub = onSnapshot(
+    getStateDocRef(u.uid),
+    { includeMetadataChanges: false },
+    (snap) => {
+      if (!skippedFirst) {
+        skippedFirst = true
+        return
+      }
 
-    const cloudData = snap.data()
-    if (!cloudData) return
+      const cloudData = snap.data()
+      if (!cloudData) return
 
-    if (cloudData.deviceId === getDeviceId()) return
-
-    const meta = getSyncMeta()
-    const localTime = meta._syncedAt || 0
-    const cloudTime =
-      cloudData.updatedAt?.toMillis?.() || cloudData.updatedAt || 0
-
-    if (cloudTime > localTime) {
       const imported = importSyncState(cloudData.data || {})
       callback(imported)
-    }
-  })
+    },
+    (err) => {
+      console.error('Sync listener error, will retry:', err)
+      _listenerUnsub = null
+      setTimeout(() => startSyncListener(callback), 5000)
+    },
+  )
 }
 
 export function stopSyncListener() {
@@ -154,7 +154,6 @@ export function stopSyncListener() {
     _listenerUnsub()
     _listenerUnsub = null
   }
-  _initialSyncDone = false
 }
 
 export async function saveBackup(label) {
