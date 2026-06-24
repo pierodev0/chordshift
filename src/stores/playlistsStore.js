@@ -20,6 +20,10 @@ export const usePlaylistsStore = defineStore('playlists', () => {
   const playlists = ref([])
   const loaded = ref(false)
 
+  function notifyChange() {
+    window.dispatchEvent(new CustomEvent('chordshift-data-changed'))
+  }
+
   function load() {
     playlists.value = loadAll()
     loaded.value = true
@@ -43,6 +47,7 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     }
     playlists.value.unshift(playlist)
     saveAll(playlists.value)
+    notifyChange()
     return playlist
   }
 
@@ -51,12 +56,14 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     if (i === -1) return null
     playlists.value[i] = { ...playlists.value[i], ...data, updatedAt: Date.now() }
     saveAll(playlists.value)
+    notifyChange()
     return playlists.value[i]
   }
 
   function remove(id) {
     playlists.value = playlists.value.filter((p) => p.id !== id)
     saveAll(playlists.value)
+    notifyChange()
   }
 
   function addSong(playlistId, songId) {
@@ -78,11 +85,13 @@ export const usePlaylistsStore = defineStore('playlists', () => {
   function replaceAll(items) {
     playlists.value = items
     saveAll(items)
+    notifyChange()
   }
 
   function clearAll() {
     playlists.value = []
     saveAll([])
+    notifyChange()
   }
 
   return {

@@ -20,7 +20,11 @@ export const useSongsStore = defineStore('songs', () => {
     return songs.value.find((s) => s.id === id) || null
   }
 
-  function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDelay }) {
+  function notifyChange() {
+  window.dispatchEvent(new CustomEvent('chordshift-data-changed'))
+}
+
+function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDelay }) {
     const song = {
       id: uuid(),
       title,
@@ -39,6 +43,7 @@ export const useSongsStore = defineStore('songs', () => {
     }
     localStorageAdapter.create(song)
     songs.value.unshift(song)
+    notifyChange()
     return song
   }
 
@@ -47,6 +52,7 @@ export const useSongsStore = defineStore('songs', () => {
     if (updated) {
       const i = songs.value.findIndex((s) => s.id === id)
       if (i !== -1) songs.value[i] = updated
+      notifyChange()
     }
     return updated
   }
@@ -54,6 +60,7 @@ export const useSongsStore = defineStore('songs', () => {
   function remove(id) {
     localStorageAdapter.delete(id)
     songs.value = songs.value.filter((s) => s.id !== id)
+    notifyChange()
   }
 
   function exportAll() {
@@ -64,11 +71,13 @@ export const useSongsStore = defineStore('songs', () => {
     localStorageAdapter.replaceAll(songs)
     songs.value = [...songs]
     loaded.value = true
+    notifyChange()
   }
 
   function clearAll() {
     localStorageAdapter.clearAll()
     songs.value = []
+    notifyChange()
   }
 
   return { songs, loaded, sortedSongs, getById, create, update, remove, load, exportAll, importAll, clearAll }

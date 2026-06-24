@@ -8,7 +8,68 @@
 </template>
 
 <script setup>
+import { onMounted, onBeforeUnmount } from 'vue'
 import OfflineBanner from './components/OfflineBanner.vue'
+import { handleRedirectResult, observeAuth } from './firebase/auth.js'
+import { downloadAndMergeState, startSyncListener, stopSyncListener, scheduleCloudSync } from './firebase/sync.js'
+import { useSongsStore } from './stores/songsStore.js'
+import { usePlaylistsStore } from './stores/playlistsStore.js'
+
+const songsStore = useSongsStore()
+const playlistsStore = usePlaylistsStore()
+
+let unsubAuth = null
+let unsubData = null
+
+onMounted(() => {
+  songsStore.load()
+  playlistsStore.load()
+
+  handleRedirectResult().then((result) => {
+    if (result?.user) {
+      downloadAndMergeState().then((merged) => {
+        if (merged.changed) {
+          if (merged.songs) songsStore.importAll(merged.songs)
+          if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
+        }
+        startSyncListener((merged) => {
+          if (merged.songs) songsStore.importAll(merged.songs)
+          if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
+        })
+      })
+    }
+  })
+
+  unsubAuth = observeAuth((u) => {
+    if (u) {
+      downloadAndMergeState().then((merged) => {
+        if (merged.changed) {
+          if (merged.songs) songsStore.importAll(merged.songs)
+          if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
+        }
+        startSyncListener((merged) => {
+          if (merged.songs) songsStore.importAll(merged.songs)
+          if (merged.playlists) playlistsStore.replaceAll(merged.playlists)
+        })
+      })
+    } else {
+      stopSyncListener()
+    }
+  })
+
+  unsubData = (e) => {
+    if (e.type === 'chordshift-data-changed') {
+      scheduleCloudSync()
+    }
+  }
+  window.addEventListener('chordshift-data-changed', unsubData)
+})
+
+onBeforeUnmount(() => {
+  if (unsubAuth) unsubAuth()
+  if (unsubData) window.removeEventListener('chordshift-data-changed', unsubData)
+  stopSyncListener()
+})
 </script>
 
 <style>

@@ -31,15 +31,19 @@
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-ink-subtle shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
-          <button disabled class="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-ink-subtle text-left cursor-not-allowed border-none opacity-50">
+          <button
+            v-if="user"
+            class="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-ink text-left cursor-pointer border-none transition-colors hover:bg-surface active:scale-[0.99]"
+            @click="saveCloudBackup"
+          >
             <span class="w-8 h-8 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
             </span>
             <div class="flex-1 min-w-0">
-              <span class="block">Copia en la nube</span>
-              <span class="block text-[11px] text-ink-subtle font-normal mt-0.5">Guardar y restaurar</span>
+              <span class="block">Guardar copia en la nube</span>
+              <span class="block text-[11px] text-ink-subtle font-normal mt-0.5">Crea un respaldo manual en tu cuenta</span>
             </div>
-            <span class="text-[10px] font-semibold text-ink-subtle bg-surface px-2 py-0.5 rounded-md">Pronto</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-ink-subtle shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
       </section>
@@ -50,16 +54,84 @@
           Sincronización en la nube
         </h2>
         <div class="bg-white rounded-2xl border border-border overflow-hidden">
-          <button disabled class="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-ink-subtle text-left cursor-not-allowed border-none opacity-50">
-            <span class="w-8 h-8 rounded-xl bg-surface text-ink-soft flex items-center justify-center shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M21.2 8H2.8M21.2 16H2.8M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <template v-if="user">
+            <div class="flex items-center gap-3 px-4 py-3.5 border-b border-border">
+              <span class="w-8 h-8 rounded-full bg-accent-subtle text-accent flex items-center justify-center text-xs font-bold shrink-0">
+                {{ user.email?.charAt(0).toUpperCase() || '?' }}
+              </span>
+              <div class="flex-1 min-w-0">
+                <span class="block text-sm font-medium text-ink truncate">{{ user.email }}</span>
+                <span class="flex items-center gap-1 text-[11px]" :class="syncStatus === 'syncing' ? 'text-amber-500' : 'text-green-600'">
+                  <span class="w-1.5 h-1.5 rounded-full" :class="syncStatus === 'syncing' ? 'bg-amber-500 animate-pulse' : 'bg-green-500'" />
+                  {{ syncStatus === 'syncing' ? 'Sincronizando...' : 'Conectado' }}
+                </span>
+              </div>
+              <button
+                class="text-xs font-semibold text-red-500 border border-red-200 rounded-xl px-3 py-1.5 cursor-pointer hover:bg-red-50 transition-colors"
+                @click="logout"
+              >Cerrar sesión</button>
+            </div>
+            <button
+              class="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-ink text-left cursor-pointer border-none transition-colors hover:bg-surface active:scale-[0.99] border-b border-border"
+              @click="syncNow"
+            >
+              <span class="w-8 h-8 rounded-xl bg-accent-subtle text-accent flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              </span>
+              <div class="flex-1 min-w-0">
+                <span class="block">Sincronizar ahora</span>
+                <span class="block text-[11px] text-ink-subtle font-normal mt-0.5">
+                  Última sincronización: {{ lastSyncLabel }}
+                </span>
+              </div>
+            </button>
+            <label class="flex items-center gap-3 px-4 py-3.5 cursor-pointer select-none">
+              <div class="w-10 h-6 rounded-full transition-colors relative shrink-0" :class="autoSync ? 'bg-accent' : 'bg-border'" @click="toggleAutoSync">
+                <div class="w-4 h-4 rounded-full bg-white shadow-sm absolute top-1 transition-all" :class="autoSync ? 'left-5' : 'left-1'" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="block text-sm font-medium text-ink">Sincronización automática</span>
+                <span class="block text-[11px] text-ink-subtle font-normal mt-0.5">Sincroniza cambios automáticamente al editar</span>
+              </div>
+            </label>
+          </template>
+          <button
+            v-else
+            class="w-full flex items-center gap-3 px-4 py-4 text-sm font-medium text-ink text-left cursor-pointer border-none transition-colors hover:bg-surface active:scale-[0.99]"
+            @click="login"
+          >
+            <span class="w-10 h-10 rounded-xl bg-surface flex items-center justify-center shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M21.2 8H2.8M21.2 16H2.8M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             </span>
             <div class="flex-1 min-w-0">
-              <span class="block">Iniciar sesión con Google</span>
-              <span class="block text-[11px] text-ink-subtle font-normal mt-0.5">Activa la sincronización en la nube</span>
+              <span class="block font-semibold">Iniciar sesión con Google</span>
+              <span class="block text-[12px] text-ink-subtle font-normal mt-0.5">Activa la sincronización en la nube</span>
             </div>
-            <span class="text-[10px] font-semibold text-ink-subtle bg-surface px-2 py-0.5 rounded-md">Pronto</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-ink-subtle shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
+        </div>
+      </section>
+
+      <section v-if="user">
+        <h2 class="text-[11px] font-bold text-ink-soft uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Copias en la nube
+        </h2>
+        <div class="bg-white rounded-2xl border border-border overflow-hidden">
+          <div v-if="backups.length === 0" class="px-4 py-6 text-center text-sm text-ink-subtle">
+            No hay copias guardadas
+          </div>
+          <div v-else class="divide-y divide-border">
+            <div v-for="b in backups" :key="b.id" class="flex items-center gap-3 px-4 py-3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-subtle shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="flex-1 min-w-0">
+                <span class="block text-sm text-ink truncate">{{ b.label }}</span>
+                <span class="block text-[11px] text-ink-subtle">{{ formatBackupDate(b.createdAt) }}</span>
+              </div>
+              <button class="text-xs font-semibold text-accent px-2.5 py-1 rounded-lg cursor-pointer hover:bg-accent-subtle transition-colors" @click="restoreBackup(b.id)">Restaurar</button>
+              <button class="text-xs font-semibold text-red-400 px-2.5 py-1 rounded-lg cursor-pointer hover:bg-red-50 transition-colors" @click="removeBackup(b.id)">Eliminar</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -90,11 +162,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { usePlaylistsStore } from '../stores/playlistsStore'
 import { useAudioCache } from '../composables/useAudioCache'
+import { user, loginGoogle, logoutGoogle } from '../firebase/auth.js'
+import { syncNow as doSyncNow, getSyncMeta, setAutoSync, saveBackup, listBackups, loadBackup, deleteBackup } from '../firebase/sync.js'
 import TabBar from '../components/TabBar.vue'
 
 const router = useRouter()
@@ -102,12 +176,91 @@ const songsStore = useSongsStore()
 const playlistsStore = usePlaylistsStore()
 const { clearAll: clearAudio } = useAudioCache()
 const fileInput = ref(null)
+const backups = ref([])
+const syncStatus = ref('idle')
+
+const autoSync = ref(getSyncMeta().autoSync !== false)
+const lastSyncLabel = computed(() => {
+  const t = getSyncMeta().lastSyncAt
+  if (!t) return 'Nunca'
+  const d = new Date(t)
+  return d.toLocaleString()
+})
 
 const BACKUP_VERSION = 1
 
+async function login() {
+  try {
+    await loginGoogle()
+  } catch (err) {
+    if (err.code !== 'auth/popup-blocked') {
+      alert('Error al iniciar sesión: ' + err.message)
+    }
+  }
+}
+
+async function logout() {
+  await logoutGoogle()
+}
+
+async function fetchBackups() {
+  try {
+    backups.value = await listBackups()
+  } catch {
+    backups.value = []
+  }
+}
+
+async function saveCloudBackup() {
+  if (!user.value) return
+  try {
+    await saveBackup()
+    await fetchBackups()
+  } catch {
+    alert('Error al guardar la copia')
+  }
+}
+
+async function restoreBackup(id) {
+  if (!confirm('¿Restaurar esta copia? Todos los datos actuales serán sobrescritos.')) return
+  try {
+    const data = await loadBackup(id)
+    if (!data) return
+    if (data.songs) songsStore.importAll(data.songs)
+    if (data.playlists) playlistsStore.replaceAll(data.playlists)
+    alert('Copia restaurada correctamente')
+  } catch {
+    alert('Error al restaurar la copia')
+  }
+}
+
+async function removeBackup(id) {
+  if (!confirm('¿Eliminar esta copia?')) return
+  try {
+    await deleteBackup(id)
+    backups.value = backups.value.filter((b) => b.id !== id)
+  } catch {
+    alert('Error al eliminar la copia')
+  }
+}
+
+function toggleAutoSync() {
+  const next = !autoSync.value
+  autoSync.value = next
+  setAutoSync(next)
+}
+
+function syncNow() {
+  doSyncNow().catch(() => {})
+}
+
+function formatBackupDate(ts) {
+  if (!ts) return ''
+  const d = ts.toDate ? ts.toDate() : new Date(ts)
+  return d.toLocaleString()
+}
+
 function exportBackup() {
-  const songsStore = useSongsStore()
-  const playlistsStore = usePlaylistsStore()
   const backup = {
     version: BACKUP_VERSION,
     exportedAt: Date.now(),
@@ -162,4 +315,20 @@ async function deleteAllData() {
   alert('Todos los datos han sido eliminados')
   router.push('/')
 }
+
+function onSyncEvent(e) {
+  syncStatus.value = e.detail.status
+}
+
+watch(user, (u) => {
+  if (u) fetchBackups()
+}, { immediate: true })
+
+onMounted(() => {
+  window.addEventListener('chordshift-sync', onSyncEvent)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('chordshift-sync', onSyncEvent)
+})
 </script>
