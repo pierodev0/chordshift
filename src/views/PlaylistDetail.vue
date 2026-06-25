@@ -71,7 +71,7 @@
                 </svg>
               </div>
               <div class="relative flex-1 min-w-0">
-                <SongCard v-if="getSong(element.id)" :song="getSong(element.id)" />
+                <SongCard v-if="getSong(element.id)" :song="getSong(element.id)" :playlistId="playlist.id" />
                 <div v-else class="bg-white rounded-xl border border-border p-4 text-ink-subtle text-sm">
                   Canción eliminada
                 </div>

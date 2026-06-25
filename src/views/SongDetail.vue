@@ -43,70 +43,105 @@
         v-if="showMp3"
         :audioUrl="audioUrl"
         :totalLines="totalLines"
+        @ended="goToNextSong"
         :autoScrolling="autoScrolling"
         :showLab="!!song?.audioKey"
         :loopRange="activeLoopRange"
         :scrollDelay="scrollDelay"
+        :showPrev="showNav && !!prevSongId"
+        :showNext="showNav && !!nextSongId"
         @toggleAutoScroll="autoScrolling = !autoScrolling"
         @loaded="songDuration = $event"
         @openLab="router.push({ name: 'song-audio', params: { id: song.id } })"
         @openDelaySheet="showDelaySheet = true"
+        @prev="goToPrevSong"
+        @next="goToNextSong"
       />
 
       <template v-if="showYoutube">
-        <div class="flex items-center gap-2.5 px-4 py-2.5 bg-white border-b border-border shrink-0">
-          <button
-            class="w-9 h-9 rounded-full bg-accent text-white flex items-center justify-center border-none cursor-pointer hover:bg-accent-hover transition-colors shrink-0 active:scale-90"
-            @click="toggleYtPlay"
-            aria-label="Reproducir"
-          >
-            <svg v-if="!ytPlaying" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5,3 19,12 5,21" />
-            </svg>
-            <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="4" width="4" height="16" rx="1" />
-              <rect x="14" y="4" width="4" height="16" rx="1" />
-            </svg>
-          </button>
-
-          <div
-            class="flex-1 h-1.5 rounded-full bg-border cursor-pointer relative overflow-hidden"
-            @click="seekYt"
-          >
-            <div class="h-full rounded-full bg-accent transition-[width] duration-200" :style="{ width: ytProgress + '%' }" />
+        <div class="bg-white border-b border-border shrink-0">
+          <div class="flex items-center gap-2.5 px-4 pt-2.5">
+            <div
+              class="flex-1 h-1.5 rounded-full bg-border cursor-pointer relative overflow-hidden"
+              @click="seekYt"
+            >
+              <div class="h-full rounded-full bg-accent transition-[width] duration-200" :style="{ width: ytProgress + '%' }" />
+            </div>
+            <span class="text-[11px] text-ink-soft font-mono tabular-nums w-[80px] text-right shrink-0">
+              {{ ytDisplayTime }}
+            </span>
           </div>
 
-          <span class="text-[11px] text-ink-soft font-mono tabular-nums w-[80px] text-right shrink-0">
-            {{ ytDisplayTime }}
-          </span>
+          <div class="flex items-center justify-center gap-1 px-4 py-1.5">
+            <div class="flex items-center gap-1">
+              <button
+                class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 gap-[2px]"
+                :class="autoScrolling && scrollDelay !== 'auto' ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+                @click="showDelaySheet = true"
+                aria-label="Delay de scroll"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span class="text-[9px] font-bold">{{ ytDelayLabel }}</span>
+              </button>
+            </div>
 
-          <button
-            class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 gap-[2px]"
-            :class="autoScrolling && scrollDelay !== 'auto' ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
-            @click="showDelaySheet = true"
-            aria-label="Delay de scroll"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span class="text-[9px] font-bold">{{ ytDelayLabel }}</span>
-          </button>
+            <div class="flex items-center gap-1">
+              <button
+                class="w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 text-ink-subtle hover:text-accent hover:bg-accent-subtle disabled:opacity-30 disabled:cursor-default"
+                :disabled="showNav && !prevSongId"
+                @click="goToPrevSong"
+                aria-label="Anterior"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="19 20 9 12 19 4" />
+                  <rect x="5" y="4" width="2" height="16" rx="1" />
+                </svg>
+              </button>
+              <button
+                class="w-9 h-9 rounded-full bg-accent text-white flex items-center justify-center border-none cursor-pointer hover:bg-accent-hover transition-colors shrink-0 active:scale-90"
+                @click="toggleYtPlay"
+                aria-label="Reproducir"
+              >
+                <svg v-if="!ytPlaying" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5,3 19,12 5,21" />
+                </svg>
+                <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
+              </button>
+              <button
+                class="w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 text-ink-subtle hover:text-accent hover:bg-accent-subtle disabled:opacity-30 disabled:cursor-default"
+                :disabled="showNav && !nextSongId"
+                @click="goToNextSong"
+                aria-label="Siguiente"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 20 15 12 5 4" />
+                  <rect x="17" y="4" width="2" height="16" rx="1" />
+                </svg>
+              </button>
+            </div>
 
-          <button
-            class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
-            :class="autoScrolling ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
-            @click="autoScrolling = !autoScrolling"
-            aria-label="Autoscroll"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-          </button>
+            <div class="flex items-center gap-1">
+              <button
+                class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
+                :class="autoScrolling ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+                @click="autoScrolling = !autoScrolling"
+                aria-label="Autoscroll"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
-
       </template>
 
       <div
@@ -122,6 +157,7 @@
           @timeupdate="onYoutubeTimeUpdate"
           @play="ytPlaying = true"
           @pause="ytPlaying = false"
+          @ended="goToNextSong"
         />
       </div>
 
@@ -294,6 +330,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
+import { usePlaylistsStore } from '../stores/playlistsStore'
 import { useChordTransposer } from '../composables/useChordTransposer'
 import { useAudioCache } from '../composables/useAudioCache'
 import AppPageHeader from '../components/AppPageHeader.vue'
@@ -313,6 +350,7 @@ const { loadAudio, deleteAudio } = useAudioCache()
 const route = useRoute()
 const router = useRouter()
 const store = useSongsStore()
+const playlistsStore = usePlaylistsStore()
 
 const showSheet = ref(false)
 const showSectionSheet = ref(false)
@@ -345,6 +383,39 @@ const ytPlayerRef = ref(null)
 const ytPlaying = ref(false)
 const ytCurrentTime = ref(0)
 const ytProgress = ref(0)
+
+const playlistId = computed(() => route.query.playlistId)
+const prevSongId = computed(() => {
+  if (!playlistId.value || !song.value) return null
+  const pl = playlistsStore.getById(playlistId.value)
+  if (!pl) return null
+  const idx = pl.songIds.indexOf(song.value.id)
+  if (idx <= 0) return null
+  return pl.songIds[idx - 1]
+})
+const nextSongId = computed(() => {
+  if (!playlistId.value || !song.value) return null
+  const pl = playlistsStore.getById(playlistId.value)
+  if (!pl) return null
+  const idx = pl.songIds.indexOf(song.value.id)
+  if (idx === -1 || idx >= pl.songIds.length - 1) return null
+  return pl.songIds[idx + 1]
+})
+const showNav = computed(() => !!playlistId.value)
+
+function goToPrevSong() {
+  if (!prevSongId.value) return
+  const r = { name: 'song-detail', params: { id: prevSongId.value } }
+  if (playlistId.value) r.query = { playlistId: playlistId.value }
+  router.push(r)
+}
+
+function goToNextSong() {
+  if (!nextSongId.value) return
+  const r = { name: 'song-detail', params: { id: nextSongId.value } }
+  if (playlistId.value) r.query = { playlistId: playlistId.value }
+  router.push(r)
+}
 const transposePos = 'bottom-4 left-4'
 const sectionsPos = 'bottom-4 left-[80px]'
 const loopsPos = 'bottom-4 left-[156px]'
@@ -415,10 +486,11 @@ watch(() => route.params.id, () => {
   showSectionSheet.value = false
   autoScrolling.value = false
   audioUrl.value = null
+  const newS = store.getById(route.params.id)
   sourceTab.value =
-    newSong?.preferredSource === 'mp3' || newSong?.preferredSource === 'youtube'
-      ? newSong.preferredSource
-      : newSong?.youtubeUrl && !newSong?.audioKey ? 'youtube' : 'mp3'
+    newS?.preferredSource === 'mp3' || newS?.preferredSource === 'youtube'
+      ? newS.preferredSource
+      : newS?.youtubeUrl && !newS?.audioKey ? 'youtube' : 'mp3'
   lastYtScrolledLine = -1
   autoDelayValue.value = 0
   ytDuration.value = 0
@@ -698,5 +770,6 @@ function selectLoop(loop) {
 
 onMounted(() => {
   if (!store.loaded) store.load()
+  if (!playlistsStore.loaded) playlistsStore.load()
 })
 </script>

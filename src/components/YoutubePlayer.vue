@@ -19,7 +19,7 @@ const props = defineProps({
     totalLines: { type: Number, default: 0 },
 });
 
-const emit = defineEmits(["timeupdate", "play", "pause", "ready"]);
+const emit = defineEmits(["timeupdate", "play", "pause", "ready", "ended"]);
 
 const containerId = "yt-player-" + Math.random().toString(36).slice(2, 8);
 const playerContainer = ref(null);
@@ -47,6 +47,7 @@ onMounted(() => {
         onStateChange(state) {
             if (state === YT.PlayerState.PLAYING) emit("play");
             if (state === YT.PlayerState.PAUSED) emit("pause");
+            if (state === YT.PlayerState.ENDED) emit("ended");
         },
         onTimeUpdate(currentTime, duration) {
             emit("timeupdate", currentTime, duration);

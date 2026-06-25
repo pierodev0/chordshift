@@ -1,7 +1,7 @@
 <template>
     <div
         class="bg-white rounded-xl border border-border overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-1 cursor-pointer active:scale-[0.98]"
-        @click="$router.push({ name: 'song-detail', params: { id: song.id } })"
+        @click="goToSong"
     >
         <div :class="coverColor" class="h-14 flex items-center justify-center">
             <span class="text-2xl font-bold text-white/90 select-none">{{
@@ -32,12 +32,22 @@
 
 <script setup>
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 
 function formatCapo(val) {
   return /^\d+$/.test(val) ? "Capo " + val : val;
 }
 
-const props = defineProps({ song: { type: Object, required: true } });
+const props = defineProps({ song: { type: Object, required: true }, playlistId: { type: String, default: '' } });
+const router = useRouter()
+
+function goToSong() {
+  const route = { name: 'song-detail', params: { id: props.song.id } }
+  if (props.playlistId) {
+    route.query = { playlistId: props.playlistId }
+  }
+  router.push(route)
+}
 
 const initial = computed(() => (props.song.title || "?")[0].toUpperCase());
 
