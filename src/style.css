@@ -3,7 +3,7 @@
 
 @theme {
   --font-sans: "Sora", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "Courier New", monospace;
+  --font-mono: "Spline Sans Mono", "Courier New", monospace;
 
   --color-paper: oklch(99% 0.005 75);
   --color-paper-2: oklch(96% 0.008 75);

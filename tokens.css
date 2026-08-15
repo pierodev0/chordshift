@@ -19,7 +19,7 @@
   --color-cover-4: oklch(62% 0.08 20);
 
   --font-sans: "Sora", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "Courier New", monospace;
+  --font-mono: "Spline Sans Mono", "Courier New", monospace;
 
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
