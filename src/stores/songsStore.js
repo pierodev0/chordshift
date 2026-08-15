@@ -64,12 +64,13 @@ function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDela
   }
 
   function exportAll() {
-    return localStorageAdapter.getAll()
+    return localStorageAdapter.getAll().map(({ audioKey, ...song }) => song)
   }
 
   function importAll(songs) {
-    localStorageAdapter.replaceAll(songs)
-    songs.value = [...songs]
+    const sanitized = songs.map(({ audioKey, ...song }) => song)
+    localStorageAdapter.replaceAll(sanitized)
+    songs.value = [...sanitized]
     loaded.value = true
     notifyChange()
   }
