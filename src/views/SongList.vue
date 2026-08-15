@@ -21,7 +21,7 @@
       <div v-else-if="filtered.length === 0 && query" class="flex items-center justify-center h-full text-ink-soft text-sm">
         No se encontraron canciones para "{{ query }}"
       </div>
-      <div v-else class="flex flex-col gap-3 pt-1">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
         <div
           v-for="(song, i) in filtered"
           :key="song.id"

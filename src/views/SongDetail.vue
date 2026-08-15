@@ -146,7 +146,7 @@
 
       <div
         v-if="showYoutube"
-        class="fixed bottom-4 right-4 z-50 w-1/2 md:w-1/3 rounded-xl overflow-hidden shadow-2xl bg-white"
+        class="fixed bottom-4 right-4 z-50 w-1/2 md:w-64 xl:w-72 rounded-xl overflow-hidden shadow-2xl bg-white"
       >
         <YoutubePlayer
           ref="ytPlayerRef"
@@ -162,17 +162,19 @@
       </div>
 
       <div ref="scrollContainer" class="flex-1 overflow-y-auto px-4 scroll-smooth">
-        <div class="pt-4 pb-1">
-          <h1 class="text-2xl font-bold text-ink leading-tight">{{ song.title }}</h1>
-          <p v-if="song.artist" class="text-ink-soft text-sm mt-0.5">{{ song.artist }}</p>
-          <p v-if="song.capo" class="text-accent text-xs mt-1 font-semibold">{{ formatCapo(song.capo) }}</p>
-        </div>
+        <div class="mx-auto max-w-4xl">
+          <div class="pt-4 pb-1">
+            <h1 class="text-2xl font-bold text-ink leading-tight">{{ song.title }}</h1>
+            <p v-if="song.artist" class="text-ink-soft text-sm mt-0.5">{{ song.artist }}</p>
+            <p v-if="song.capo" class="text-accent text-xs mt-1 font-semibold">{{ formatCapo(song.capo) }}</p>
+          </div>
 
-        <div class="pb-2">
-          <ChordLegend :chords="chords" />
-        </div>
+          <div class="pb-2">
+            <ChordLegend :chords="chords" />
+          </div>
 
-        <div class="font-mono text-sm sm:text-base lg:text-lg leading-relaxed whitespace-pre-wrap" :class="markers.length > 0 || validLoops.length > 0 ? 'pb-40' : 'pb-24'" v-html="renderedHtml" />
+          <div class="font-mono text-sm sm:text-base lg:text-lg leading-relaxed whitespace-pre-wrap" :class="markers.length > 0 || validLoops.length > 0 ? 'pb-40' : 'pb-24'" v-html="renderedHtml" />
+        </div>
       </div>
 
       <button
