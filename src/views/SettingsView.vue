@@ -7,6 +7,42 @@
     <div class="flex-1 overflow-y-auto px-4 py-6 pb-24 space-y-8">
       <section>
         <h2 class="text-[11px] font-bold text-ink-soft uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          Apariencia
+        </h2>
+        <div class="bg-white rounded-2xl border border-border overflow-hidden divide-y divide-border">
+          <div class="px-4 py-3.5">
+            <span class="block text-sm font-medium text-ink">Color de acordes</span>
+            <span class="block text-[11px] text-ink-subtle font-normal mt-0.5">Color con el que se resaltan los acordes en las canciones</span>
+          </div>
+          <div class="flex items-center gap-2 px-4 py-3.5">
+            <label class="relative w-9 h-9 rounded-full overflow-hidden shrink-0 cursor-pointer border border-border">
+              <input
+                type="color"
+                :value="chordColor"
+                @input="setChordColor($event.target.value)"
+                class="absolute -inset-2 w-[calc(100%+1rem)] h-[calc(100%+1rem)] cursor-pointer opacity-0"
+                aria-label="Elegir color de acordes"
+              />
+              <span class="absolute inset-0 pointer-events-none" :style="{ backgroundColor: chordColor }" />
+            </label>
+            <div class="flex items-center gap-1.5">
+              <button
+                v-for="c in chordSwatches"
+                :key="c"
+                class="w-6 h-6 rounded-full cursor-pointer border transition-transform hover:scale-110 active:scale-95"
+                :class="chordColor === c ? 'ring-2 ring-offset-2 ring-accent' : 'border-border'"
+                :style="{ backgroundColor: c }"
+                :aria-label="`Color ${c}`"
+                @click="setChordColor(c)"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-[11px] font-bold text-ink-soft uppercase tracking-widest mb-3 flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Copia de seguridad
         </h2>
@@ -165,12 +201,15 @@ import { useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { usePlaylistsStore } from '../stores/playlistsStore'
 import { useAudioCache } from '../composables/useAudioCache'
+import { usePreferences } from '../composables/usePreferences'
 import { user, loginGoogle, logoutGoogle } from '../firebase/auth.js'
 import { syncNow as doSyncNow, getSyncMeta, setAutoSync, saveBackup, listBackups, loadBackup, deleteBackup } from '../firebase/sync.js'
 const router = useRouter()
 const songsStore = useSongsStore()
 const playlistsStore = usePlaylistsStore()
 const { clearAll: clearAudio } = useAudioCache()
+const { chordColor, setChordColor } = usePreferences()
+const chordSwatches = ['#f97316', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7']
 const fileInput = ref(null)
 const backups = ref([])
 const syncStatus = ref('idle')

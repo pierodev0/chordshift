@@ -335,6 +335,7 @@ import { useSongsStore } from '../stores/songsStore'
 import { usePlaylistsStore } from '../stores/playlistsStore'
 import { useChordTransposer } from '../composables/useChordTransposer'
 import { useAudioCache } from '../composables/useAudioCache'
+import { usePreferences } from '../composables/usePreferences'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import AppIconButton from '../components/AppIconButton.vue'
 import AppBottomSheet from '../components/AppBottomSheet.vue'
@@ -348,6 +349,7 @@ import SectionNavSheet from '../components/SectionNavSheet.vue'
 
 const { chordRegex, isChordLine, transposeNote, escapeHTML } = useChordTransposer()
 const { loadAudio, deleteAudio } = useAudioCache()
+const { chordColor } = usePreferences()
 
 const route = useRoute()
 const router = useRouter()
@@ -663,7 +665,7 @@ const cachedHtml = computed(() => {
       return line.replace(chordRegex, (match, root, bass) => {
         const transRoot = transposeNote(root, currentStep.value)
         const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
-        return `<strong>${transRoot}${transBass}</strong>`
+        return `<strong class="chord" style="color:${chordColor.value};background:color-mix(in oklch, ${chordColor.value} 12%, transparent)">${transRoot}${transBass}</strong>`
       })
     }
     return escapeHTML(line)
@@ -775,3 +777,11 @@ onMounted(() => {
   if (!playlistsStore.loaded) playlistsStore.load()
 })
 </script>
+
+<style>
+.chord {
+  font-weight: 700;
+  border-radius: 0.3em;
+  padding: 0.05em 0.3em;
+}
+</style>
