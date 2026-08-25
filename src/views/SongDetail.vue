@@ -173,7 +173,7 @@
             <ChordLegend :chords="chords" />
           </div>
 
-          <div class="font-mono text-sm sm:text-base lg:text-lg leading-relaxed whitespace-pre-wrap" :class="markers.length > 0 || validLoops.length > 0 ? 'pb-40' : 'pb-24'" v-html="renderedHtml" />
+          <div class="font-mono text-sm sm:text-base lg:text-lg leading-loose whitespace-pre-wrap" :class="markers.length > 0 || validLoops.length > 0 ? 'pb-40' : 'pb-24'" v-html="renderedHtml" />
         </div>
       </div>
 
@@ -470,9 +470,15 @@ function setSourceTab(tab) {
 function computeAutoDelay(duration) {
   const container = scrollContainer.value
   if (!container || totalLines.value === 0 || !duration) return 0
-  const firstLine = document.getElementById('line-0')
-  if (!firstLine) return 0
-  const lineHeight = firstLine.offsetHeight
+  let lineHeight = 0
+  for (let i = 0; i < totalLines.value; i++) {
+    const el = document.getElementById('line-' + i)
+    if (el && el.offsetHeight > 0) {
+      lineHeight = el.offsetHeight
+      break
+    }
+  }
+  if (!lineHeight) return 0
   const visibleLines = Math.ceil(container.clientHeight / lineHeight)
   const secondsPerLine = duration / totalLines.value
   return Math.round((visibleLines / 3) * secondsPerLine)
@@ -657,19 +663,80 @@ const keyText = computed(() =>
     : 'Original → ' + (currentStep.value > 0 ? '+' : '') + currentStep.value,
 )
 
+function chordHtml(root, bass) {
+  const transRoot = transposeNote(root, currentStep.value)
+  const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
+  return `<strong class="chord" style="color:${chordColor.value};background:color-mix(in oklch, ${chordColor.value} 12%, transparent)">${transRoot}${transBass}</strong>`
+}
+
+function parseChords(line) {
+  const result = []
+  const re = new RegExp(chordRegex.source, 'g')
+  let m
+  while ((m = re.exec(line)) !== null) {
+    result.push({ col: m.index, html: chordHtml(m[1], m[2]) })
+  }
+  return result
+}
+
+function renderChordLine(line) {
+  return line.replace(chordRegex, (match, root, bass) =>
+    root === undefined
+      ? `<strong class="chord" style="color:${chordColor.value}">${escapeHTML(match)}</strong>`
+      : chordHtml(root, bass),
+  )
+}
+
+// Render a lyric line with its chord line folded in: each chord is absolutely
+// anchored above the lyric character at its source column, so chords and lyrics
+// remain aligned even when the lyric line wraps on narrow screens.
+function renderLyricWithChords(lyric, chords) {
+  let out = ''
+  let pos = 0
+  for (const c of chords) {
+    let target = c.col
+    if (target > lyric.length) target = lyric.length
+    if (target < pos) target = pos
+    out += escapeHTML(lyric.slice(pos, target))
+    out += `<span class="chord-anchor">${c.html}</span>`
+    pos = target
+  }
+  out += escapeHTML(lyric.slice(pos))
+  return out
+}
+
 const cachedHtml = computed(() => {
   if (!song.value) return []
   const lines = song.value.content.split('\n')
-  return lines.map((line) => {
-    if (isChordLine(line)) {
-      return line.replace(chordRegex, (match, root, bass) => {
-        const transRoot = transposeNote(root, currentStep.value)
-        const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
-        return `<strong class="chord" style="color:${chordColor.value};background:color-mix(in oklch, ${chordColor.value} 12%, transparent)">${transRoot}${transBass}</strong>`
-      })
+  const out = []
+  let pendingChords = null
+
+  lines.forEach((line, i) => {
+    const next = lines[i + 1]
+    const nextIsLyric =
+      !!next && next.trim() !== '' && !isChordLine(next) && !/^\[.+\]$/.test(next)
+
+    if (pendingChords) {
+      out.push(renderLyricWithChords(line, pendingChords))
+      pendingChords = null
+      return
     }
-    return escapeHTML(line)
+
+    if (isChordLine(line)) {
+      if (nextIsLyric) {
+        pendingChords = parseChords(line)
+        out.push('<span class="chord-spacer"></span>')
+      } else {
+        out.push(renderChordLine(line))
+      }
+      return
+    }
+
+    out.push(escapeHTML(line))
   })
+
+  if (pendingChords) out.push('<span class="chord-spacer"></span>')
+  return out
 })
 
 const renderedHtml = computed(() => {
@@ -783,5 +850,33 @@ onMounted(() => {
   font-weight: 700;
   border-radius: 0.3em;
   padding: 0.05em 0.3em;
+}
+
+/* Keeps the source line index stable while rendering no extra height when its
+   chords are folded into the following lyric line. */
+.chord-spacer {
+  display: block;
+  height: 0;
+}
+
+/* Zero-size inline anchor: holds each chord in the lyric text flow without
+   affecting width or wrapping, so the chord always sits above the character
+   at its source column even when the lyric line wraps. */
+.chord-anchor {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  vertical-align: text-bottom;
+  line-height: 0;
+}
+
+.chord-anchor .chord {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateY(-1.7em);
+  white-space: nowrap;
 }
 </style>
