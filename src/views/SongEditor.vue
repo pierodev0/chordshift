@@ -45,6 +45,38 @@
       </div>
 
       <div>
+        <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Duración</label>
+        <div class="flex items-center gap-2 p-3 rounded-xl border border-border bg-white">
+          <input
+            v-model.number="durationMinutes"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            max="999"
+            placeholder="0"
+            aria-label="Minutos"
+            class="flex-1 min-w-0 bg-transparent text-sm text-ink text-center outline-none placeholder:text-ink-subtle"
+          />
+          <span class="text-sm font-bold text-ink-soft shrink-0">min</span>
+          <span class="text-sm font-bold text-ink-subtle shrink-0">:</span>
+          <input
+            v-model.number="durationSeconds"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            max="59"
+            placeholder="00"
+            aria-label="Segundos"
+            class="flex-1 min-w-0 bg-transparent text-sm text-ink text-center outline-none placeholder:text-ink-subtle"
+          />
+          <span class="text-sm font-bold text-ink-soft shrink-0">seg</span>
+        </div>
+        <p v-if="durationTotal > 0" class="text-[11px] text-ink-soft mt-1.5">
+          Total: <strong class="text-ink">{{ durationDisplay }}</strong>
+        </p>
+      </div>
+
+      <div>
         <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Scroll delay</label>
         <div class="flex items-center gap-2 mb-2">
           <button
@@ -114,6 +146,19 @@ const existingAudioName = ref('')
 const removeExistingAudio = ref(false)
 const youtubeUrl = ref('')
 const scrollDelay = ref('auto')
+const durationMinutes = ref('')
+const durationSeconds = ref('')
+
+const durationTotal = computed(() => {
+  const m = Math.max(0, Math.floor(Number(durationMinutes.value) || 0))
+  const s = Math.min(59, Math.max(0, Math.floor(Number(durationSeconds.value) || 0)))
+  return m * 60 + s
+})
+
+const durationDisplay = computed(() => {
+  const total = durationTotal.value
+  return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0')
+})
 
 const delayDisplay = computed(() => {
   const v = scrollDelay.value
@@ -166,6 +211,7 @@ async function save() {
       content: content.value,
       youtubeUrl: youtubeUrl.value,
       scrollDelay: scrollDelay.value,
+      duration: durationTotal.value,
       audioKey: existingAudioName.value && !removeExistingAudio.value ? route.params.id : '',
     })
     if (selectedFile.value) {
@@ -184,6 +230,7 @@ async function save() {
       content: content.value,
       youtubeUrl: youtubeUrl.value,
       scrollDelay: scrollDelay.value,
+      duration: durationTotal.value,
     })
     if (selectedFile.value) {
       await saveAudio(song.id, selectedFile.value)
@@ -205,6 +252,9 @@ onMounted(() => {
     }
     youtubeUrl.value = existing.value.youtubeUrl || ''
     scrollDelay.value = existing.value.scrollDelay !== undefined ? existing.value.scrollDelay : 'auto'
+    const existingDuration = Number(existing.value.duration) || 0
+    durationMinutes.value = existingDuration > 0 ? Math.floor(existingDuration / 60) : ''
+    durationSeconds.value = existingDuration > 0 ? existingDuration % 60 : ''
   }
 })
 </script>

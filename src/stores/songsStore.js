@@ -24,7 +24,7 @@ export const useSongsStore = defineStore('songs', () => {
   window.dispatchEvent(new CustomEvent('chordshift-data-changed'))
 }
 
-function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDelay }) {
+function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDelay, duration }) {
     const song = {
       id: uuid(),
       title,
@@ -34,6 +34,7 @@ function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDela
       audioKey: audioKey || '',
       youtubeUrl: youtubeUrl || '',
       scrollDelay: scrollDelay !== undefined ? scrollDelay : 'auto',
+      duration: duration > 0 ? Math.round(duration) : 0,
       preferredSource: '',
       transpose: 0,
       markers: [],

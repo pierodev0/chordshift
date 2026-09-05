@@ -144,6 +144,92 @@
         </div>
       </template>
 
+      <template v-if="showManual">
+        <div class="bg-white border-b border-border shrink-0">
+          <div class="flex items-center gap-2.5 px-4 pt-2.5">
+            <div
+              class="flex-1 h-1.5 rounded-full bg-border cursor-pointer relative overflow-hidden"
+              @click="seekManual"
+            >
+              <div class="h-full rounded-full bg-accent transition-[width] duration-200" :style="{ width: manualProgress + '%' }" />
+            </div>
+            <span class="text-[11px] text-ink-soft font-mono tabular-nums w-[80px] text-right shrink-0">
+              {{ manualDisplayTime }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-center gap-1 px-4 py-1.5">
+            <div class="flex items-center gap-1">
+              <button
+                class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 gap-[2px]"
+                :class="autoScrolling && scrollDelay !== 'auto' ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+                @click="showDelaySheet = true"
+                aria-label="Delay de scroll"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span class="text-[9px] font-bold">{{ ytDelayLabel }}</span>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1">
+              <button
+                class="w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 text-ink-subtle hover:text-accent hover:bg-accent-subtle disabled:opacity-30 disabled:cursor-default"
+                :disabled="showNav && !prevSongId"
+                @click="goToPrevSong"
+                aria-label="Anterior"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="19 20 9 12 19 4" />
+                  <rect x="5" y="4" width="2" height="16" rx="1" />
+                </svg>
+              </button>
+              <button
+                class="w-9 h-9 rounded-full bg-accent text-white flex items-center justify-center border-none cursor-pointer hover:bg-accent-hover transition-colors shrink-0 active:scale-90"
+                @click="toggleManualPlay"
+                aria-label="Reproducir"
+              >
+                <svg v-if="!manualPlaying" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5,3 19,12 5,21" />
+                </svg>
+                <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
+              </button>
+              <button
+                class="w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer transition-colors shrink-0 text-ink-subtle hover:text-accent hover:bg-accent-subtle disabled:opacity-30 disabled:cursor-default"
+                :disabled="showNav && !nextSongId"
+                @click="goToNextSong"
+                aria-label="Siguiente"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 20 15 12 5 4" />
+                  <rect x="17" y="4" width="2" height="16" rx="1" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1">
+              <button
+                class="w-8 h-8 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
+                :class="autoScrolling ? 'text-accent bg-accent-subtle' : 'text-ink-subtle hover:bg-surface'"
+                @click="autoScrolling = !autoScrolling"
+                aria-label="Autoscroll"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+
       <div
         v-if="showYoutube"
         class="fixed bottom-4 right-4 z-50 w-1/2 md:w-64 xl:w-72 rounded-xl overflow-hidden shadow-2xl bg-white"
@@ -167,6 +253,7 @@
             <h1 class="text-2xl font-bold text-ink leading-tight">{{ song.title }}</h1>
             <p v-if="song.artist" class="text-ink-soft text-sm mt-0.5">{{ song.artist }}</p>
             <p v-if="song.capo" class="text-accent text-xs mt-1 font-semibold">{{ formatCapo(song.capo) }}</p>
+            <p v-if="manualDurationLabel && !showMp3 && !showYoutube" class="text-ink-soft text-xs mt-1 font-mono tabular-nums">⏱ {{ manualDurationLabel }}</p>
           </div>
 
           <div class="pb-2">
@@ -382,11 +469,28 @@ const showYoutube = computed(() => youtubeVideoId.value && (!hasBothSources.valu
 
 const scrollDelay = ref('auto')
 const ytDuration = ref(0)
+
+const manualDurationLabel = computed(() => {
+  const total = Number(song.value?.duration) || 0
+  if (total <= 0) return ''
+  return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0')
+})
 const autoDelayValue = ref(0)
 const ytPlayerRef = ref(null)
 const ytPlaying = ref(false)
 const ytCurrentTime = ref(0)
 const ytProgress = ref(0)
+
+const manualCurrentTime = ref(0)
+const manualPlaying = ref(false)
+const manualProgress = ref(0)
+let manualTimer = null
+let manualLastTick = 0
+let lastManualScrolledLine = -1
+
+const manualTotal = computed(() => Number(song.value?.duration) || 0)
+const showManual = computed(() => manualTotal.value > 0 && !showMp3.value && !showYoutube.value)
+const manualDisplayTime = computed(() => formatYtTime(manualCurrentTime.value) + ' / ' + formatYtTime(manualTotal.value))
 
 const playlistId = computed(() => route.query.playlistId)
 const prevSongId = computed(() => {
@@ -460,6 +564,79 @@ function seekYt(e) {
   ytPlayerRef.value.seek(x * ytDuration.value)
 }
 
+function updateManualProgress() {
+  const total = manualTotal.value
+  manualProgress.value = total ? (manualCurrentTime.value / total) * 100 : 0
+  if (!autoScrolling.value || totalLines.value === 0 || !total) return
+  let effectiveDelay = 0
+  if (scrollDelay.value === 'auto') {
+    effectiveDelay = computeAutoDelay(total)
+    if (effectiveDelay > 0) autoDelayValue.value = effectiveDelay
+  } else {
+    effectiveDelay = Number(scrollDelay.value) || 0
+  }
+  const scrollTime = Math.max(0, manualCurrentTime.value - effectiveDelay)
+  const idx = Math.min(Math.floor((scrollTime / total) * totalLines.value), totalLines.value - 1)
+  if (idx !== lastManualScrolledLine) {
+    lastManualScrolledLine = idx
+    const el = document.getElementById(`line-${idx}`)
+    if (el) el.scrollIntoView({ block: 'start' })
+  }
+}
+
+function stopManualTimer() {
+  if (manualTimer) {
+    clearInterval(manualTimer)
+    manualTimer = null
+  }
+}
+
+function toggleManualPlay() {
+  const total = manualTotal.value
+  if (!total) return
+  if (manualPlaying.value) {
+    manualPlaying.value = false
+    stopManualTimer()
+    return
+  }
+  if (manualCurrentTime.value >= total) {
+    manualCurrentTime.value = 0
+    lastManualScrolledLine = -1
+  }
+  manualPlaying.value = true
+  manualLastTick = Date.now()
+  updateManualProgress()
+  manualTimer = setInterval(() => {
+    const now = Date.now()
+    manualCurrentTime.value = Math.min(total, manualCurrentTime.value + (now - manualLastTick) / 1000)
+    manualLastTick = now
+    updateManualProgress()
+    if (manualCurrentTime.value >= total) {
+      manualPlaying.value = false
+      stopManualTimer()
+      goToNextSong()
+    }
+  }, 250)
+}
+
+function seekManual(e) {
+  const total = manualTotal.value
+  if (!total) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const x = (e.clientX - rect.left) / rect.width
+  manualCurrentTime.value = x * total
+  if (!manualPlaying.value) lastManualScrolledLine = -1
+  updateManualProgress()
+}
+
+function resetManualPlayer() {
+  manualPlaying.value = false
+  stopManualTimer()
+  manualCurrentTime.value = 0
+  manualProgress.value = 0
+  lastManualScrolledLine = -1
+}
+
 function setSourceTab(tab) {
   sourceTab.value = tab
   if (song.value) {
@@ -486,7 +663,7 @@ function computeAutoDelay(duration) {
 
 watch(showDelaySheet, (shown) => {
   if (shown && scrollDelay.value === 'auto') {
-    const dur = ytDuration.value || songDuration.value
+    const dur = ytDuration.value || songDuration.value || manualTotal.value
     autoDelayValue.value = computeAutoDelay(dur)
   }
 })
@@ -496,6 +673,7 @@ watch(() => route.params.id, () => {
   showSectionSheet.value = false
   autoScrolling.value = false
   audioUrl.value = null
+  resetManualPlayer()
   const newS = store.getById(route.params.id)
   sourceTab.value =
     newS?.preferredSource === 'mp3' || newS?.preferredSource === 'youtube'
@@ -604,6 +782,7 @@ async function deleteSong() {
 }
 
 onBeforeUnmount(() => {
+  stopManualTimer()
   if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
 })
 
