@@ -253,6 +253,10 @@
             <h1 class="text-2xl font-bold text-ink leading-tight">{{ song.title }}</h1>
             <p v-if="song.artist" class="text-ink-soft text-sm mt-0.5">{{ song.artist }}</p>
             <p v-if="song.capo" class="text-accent text-xs mt-1 font-semibold">{{ formatCapo(song.capo) }}</p>
+            <div v-if="(song.difficulty || 0) > 0" class="flex items-center gap-1.5 mt-1.5">
+              <DifficultyStars :value="song.difficulty" />
+              <span class="text-[11px] font-bold text-ink-soft tabular-nums">{{ song.difficulty }}/10</span>
+            </div>
             <p v-if="manualDurationLabel && !showMp3 && !showYoutube" class="text-ink-soft text-xs mt-1 font-mono tabular-nums">⏱ {{ manualDurationLabel }}</p>
           </div>
 
@@ -434,6 +438,7 @@ import AppButton from '../components/AppButton.vue'
 import AppIconButton from '../components/AppIconButton.vue'
 import AppBottomSheet from '../components/AppBottomSheet.vue'
 import ChordLegend from '../components/ChordLegend.vue'
+import DifficultyStars from '../components/DifficultyStars.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
 import YoutubePlayer from '../components/YoutubePlayer.vue'
 import TransposeSheet from '../components/TransposeSheet.vue'

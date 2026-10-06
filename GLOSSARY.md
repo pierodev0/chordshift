@@ -15,3 +15,7 @@ _Avoid_: Playlist, setlist
 **Tocada**:
 Canción que el guitarrista marcó explícitamente como interpretada.
 _Avoid_: Reproducida, terminada
+
+**Dificultad**:
+Nivel de complejidad de una Canción para tocarla en guitarra, de 1 a 10. 0 significa sin definir.
+_Avoid_: Rating, nivel

@@ -16,6 +16,7 @@ function makeSong(overrides = {}) {
     capo: '',
     playCount: 0,
     lastPlayedAt: null,
+    difficulty: 0,
     ...overrides,
   }
 }
@@ -44,5 +45,22 @@ describe('SongCard play count badge', () => {
     const badge = wrapper.find('[data-testid="play-count-badge"]')
 
     expect(badge.attributes('title')).toBe('1 tocada')
+  })
+})
+
+describe('SongCard difficulty badge', () => {
+  it('hides the badge when difficulty is not defined', () => {
+    const wrapper = mount(SongCard, { props: { song: makeSong({ difficulty: 0 }) } })
+
+    expect(wrapper.find('[data-testid="difficulty-badge"]').exists()).toBe(false)
+  })
+
+  it('shows the difficulty number with a star', () => {
+    const wrapper = mount(SongCard, { props: { song: makeSong({ difficulty: 7 }) } })
+    const badge = wrapper.find('[data-testid="difficulty-badge"]')
+
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toContain('7')
+    expect(badge.attributes('title')).toBe('Dificultad 7 de 10')
   })
 })

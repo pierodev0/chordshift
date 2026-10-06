@@ -7,12 +7,20 @@ export const useSongsStore = defineStore('songs', () => {
   const songs = ref([])
   const loaded = ref(false)
 
-  const playDefaults = { playCount: 0, lastPlayedAt: null }
+  const playDefaults = { playCount: 0, lastPlayedAt: null, difficulty: 0 }
+
+  function normalizeDifficulty(value) {
+    const n = Math.floor(Number(value) || 0)
+    if (n < 0) return 0
+    if (n > 10) return 10
+    return n
+  }
 
   function withPlayDefaults(song) {
     return {
       ...playDefaults,
       ...song,
+      difficulty: normalizeDifficulty(song.difficulty),
     }
   }
 
@@ -40,7 +48,7 @@ export const useSongsStore = defineStore('songs', () => {
   window.dispatchEvent(new CustomEvent('chordshift-data-changed'))
 }
 
-function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDelay, duration }) {
+function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDelay, duration, difficulty }) {
     const song = {
       id: uuid(),
       title,
@@ -53,6 +61,7 @@ function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDela
       duration: duration > 0 ? Math.round(duration) : 0,
       preferredSource: '',
       ...playDefaults,
+      difficulty: normalizeDifficulty(difficulty),
       transpose: 0,
       markers: [],
       loops: [],
@@ -66,7 +75,9 @@ function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDela
   }
 
   function update(id, data) {
-    const updated = localStorageAdapter.update({ id, ...data })
+    const payload = { id, ...data }
+    if (payload.difficulty !== undefined) payload.difficulty = normalizeDifficulty(payload.difficulty)
+    const updated = localStorageAdapter.update(payload)
     if (updated) {
       const i = songs.value.findIndex((s) => s.id === id)
       if (i !== -1) songs.value[i] = updated

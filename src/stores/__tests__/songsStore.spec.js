@@ -134,4 +134,41 @@ describe('songsStore', () => {
     expect(store.getById('legacy').playCount).toBe(0)
     expect(store.getById('legacy').lastPlayedAt).toBeNull()
   })
+
+  it('create() defaults difficulty to 0', () => {
+    const store = useSongsStore()
+    const song = store.create({ title: 'Difícil' })
+
+    expect(song.difficulty).toBe(0)
+  })
+
+  it('create() stores a valid difficulty', () => {
+    const store = useSongsStore()
+    const song = store.create({ title: 'Difícil', difficulty: 7 })
+
+    expect(song.difficulty).toBe(7)
+  })
+
+  it('create() clamps difficulty to 0-10', () => {
+    const store = useSongsStore()
+
+    expect(store.create({ title: 'Alta', difficulty: 99 }).difficulty).toBe(10)
+    expect(store.create({ title: 'Baja', difficulty: -3 }).difficulty).toBe(0)
+  })
+
+  it('update() clamps difficulty to 0-10', () => {
+    const store = useSongsStore()
+    const song = store.create({ title: 'Difícil' })
+
+    expect(store.update(song.id, { difficulty: 42 }).difficulty).toBe(10)
+    expect(store.update(song.id, { difficulty: 0 }).difficulty).toBe(0)
+  })
+
+  it('load() migrates legacy songs without difficulty', () => {
+    mockSongs.push({ id: 'legacy-diff', title: 'Legacy Diff', updatedAt: Date.now() })
+    const store = useSongsStore()
+    store.load()
+
+    expect(store.getById('legacy-diff').difficulty).toBe(0)
+  })
 })

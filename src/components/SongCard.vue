@@ -26,6 +26,17 @@
           >{{ preview }}</span
         >
         <span
+          v-if="(song.difficulty || 0) > 0"
+          class="inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums text-accent bg-accent-subtle px-1.5 py-0.5 rounded-full shrink-0"
+          :title="'Dificultad ' + song.difficulty + ' de 10'"
+          aria-label="Dificultad"
+          data-testid="difficulty-badge"
+        >
+          {{ song.difficulty }}<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" />
+          </svg></span
+        >
+        <span
           class="inline-flex items-center gap-1 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full shrink-0"
           :class="(song.playCount || 0) > 0 ? 'text-accent bg-accent-subtle' : 'text-ink-subtle bg-paper-2'"
           :title="playCountLabel"

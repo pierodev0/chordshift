@@ -6,6 +6,7 @@
       <AppInput v-model="title" label="Título" placeholder="Título de la canción" />
       <AppInput v-model="artist" label="Artista" placeholder="Nombre del artista" />
       <AppInput v-model="capo" label="Capo (cejilla)" placeholder="Ej: Capo 1, Capo 3..." />
+      <DifficultyPicker v-model="difficulty" label="Dificultad" />
 
       <div>
         <label class="text-[11px] font-bold text-ink-soft tracking-widest uppercase mb-2 block">Audio (mp3)</label>
@@ -125,6 +126,7 @@ import { isValidYoutubeUrl } from '../utils/youtube'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import AppInput from '../components/AppInput.vue'
 import AppButton from '../components/AppButton.vue'
+import DifficultyPicker from '../components/DifficultyPicker.vue'
 
 const { saveAudio } = useAudioCache()
 
@@ -146,6 +148,7 @@ const existingAudioName = ref('')
 const removeExistingAudio = ref(false)
 const youtubeUrl = ref('')
 const scrollDelay = ref('auto')
+const difficulty = ref(0)
 const durationMinutes = ref('')
 const durationSeconds = ref('')
 
@@ -212,6 +215,7 @@ async function save() {
       youtubeUrl: youtubeUrl.value,
       scrollDelay: scrollDelay.value,
       duration: durationTotal.value,
+      difficulty: difficulty.value,
       audioKey: existingAudioName.value && !removeExistingAudio.value ? route.params.id : '',
     })
     if (selectedFile.value) {
@@ -231,6 +235,7 @@ async function save() {
       youtubeUrl: youtubeUrl.value,
       scrollDelay: scrollDelay.value,
       duration: durationTotal.value,
+      difficulty: difficulty.value,
     })
     if (selectedFile.value) {
       await saveAudio(song.id, selectedFile.value)
@@ -252,6 +257,7 @@ onMounted(() => {
     }
     youtubeUrl.value = existing.value.youtubeUrl || ''
     scrollDelay.value = existing.value.scrollDelay !== undefined ? existing.value.scrollDelay : 'auto'
+    difficulty.value = Number(existing.value.difficulty) || 0
     const existingDuration = Number(existing.value.duration) || 0
     durationMinutes.value = existingDuration > 0 ? Math.floor(existingDuration / 60) : ''
     durationSeconds.value = existingDuration > 0 ? existingDuration % 60 : ''
