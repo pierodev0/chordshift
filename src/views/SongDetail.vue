@@ -691,7 +691,6 @@ watch(showDelaySheet, (shown) => {
 watch(() => route.params.id, () => {
   showSheet.value = false
   showSectionSheet.value = false
-  autoScrolling.value = false
   countedThisVisit.value = false
   audioUrl.value = null
   resetManualPlayer()
@@ -706,6 +705,7 @@ watch(() => route.params.id, () => {
   ytPlaying.value = false
   ytCurrentTime.value = 0
   ytProgress.value = 0
+  scrollContainer.value?.scrollTo?.({ top: 0 })
 })
 
 watch(song, (newSong) => {
