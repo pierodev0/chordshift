@@ -22,8 +22,22 @@
           >{{ formatCapo(song.capo) }}</span
         >
         <span
-          class="text-ink-subtle text-xs font-mono truncate leading-relaxed"
+          class="text-ink-subtle text-xs font-mono truncate leading-relaxed flex-1 min-w-0"
           >{{ preview }}</span
+        >
+        <span
+          class="inline-flex items-center gap-1 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full shrink-0"
+          :class="(song.playCount || 0) > 0 ? 'text-accent bg-accent-subtle' : 'text-ink-subtle bg-paper-2'"
+          :title="playCountLabel"
+          aria-label="Veces tocada"
+          data-testid="play-count-badge"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
+          </svg>
+          {{ song.playCount || 0 }}</span
         >
       </div>
     </div>
@@ -66,5 +80,10 @@ const preview = computed(() => {
     .split('\n')
     .find((l) => l.trim().length > 5)
   return firstLine ? firstLine.trim().slice(0, 60) : 'Sin contenido'
+})
+
+const playCountLabel = computed(() => {
+  const count = props.song.playCount || 0
+  return count === 1 ? '1 tocada' : count + ' tocadas'
 })
 </script>
