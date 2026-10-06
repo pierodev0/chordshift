@@ -5,7 +5,7 @@
       <span class="text-[10px] text-ink-subtle font-semibold uppercase tracking-widest">{{ store.sortedSongs.length }} canciones</span>
     </header>
 
-    <div class="px-4 pt-3 pb-2 shrink-0">
+    <div class="px-4 pt-3 pb-2 shrink-0 flex flex-col gap-2">
       <AppInput v-model="query" type="search" placeholder="Buscar canciones...">
         <template #icon>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -14,6 +14,30 @@
           </svg>
         </template>
       </AppInput>
+      <div class="flex items-center gap-2">
+        <label class="sr-only" for="song-sort-key">Ordenar por</label>
+        <select
+          id="song-sort-key"
+          v-model="sortKey"
+          data-testid="song-sort-key"
+          class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-border bg-white text-xs font-semibold text-ink outline-none cursor-pointer focus:border-accent"
+        >
+          <option value="recent">Recientes</option>
+          <option value="name">Nombre</option>
+          <option value="plays">Más tocadas</option>
+          <option value="difficulty">Dificultad</option>
+        </select>
+        <label class="sr-only" for="song-sort-direction">Dirección</label>
+        <select
+          id="song-sort-direction"
+          v-model="sortDirection"
+          data-testid="song-sort-direction"
+          class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-border bg-white text-xs font-semibold text-ink outline-none cursor-pointer focus:border-accent"
+        >
+          <option value="asc">Ascendente</option>
+          <option value="desc">Descendente</option>
+        </select>
+      </div>
     </div>
 
     <div class="flex-1 overflow-y-auto px-4 pb-20" style="padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px))">
@@ -55,10 +79,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { useAudioCache } from '../composables/useAudioCache'
+import { sortSongs, normalizeText, SORT_DEFAULT_DIRECTIONS } from '../utils/songSort'
 import AppInput from '../components/AppInput.vue'
 import SongCard from '../components/SongCard.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -66,15 +91,23 @@ const store = useSongsStore()
 const { deleteAudio } = useAudioCache()
 const router = useRouter()
 const query = ref('')
+const sortKey = ref('recent')
+const sortDirection = ref(SORT_DEFAULT_DIRECTIONS.recent)
+
+watch(sortKey, (key) => {
+  sortDirection.value = SORT_DEFAULT_DIRECTIONS[key] || 'desc'
+})
 
 const filtered = computed(() => {
-  if (!query.value.trim()) return store.sortedSongs
-  const q = query.value.toLowerCase()
-  return store.sortedSongs.filter(
-    (s) =>
-      s.title.toLowerCase().includes(q) ||
-      s.artist.toLowerCase().includes(q),
-  )
+  const q = normalizeText(query.value.trim())
+  const searched = q
+    ? store.songs.filter(
+      (s) =>
+        normalizeText(s.title).includes(q) ||
+        normalizeText(s.artist).includes(q),
+    )
+    : [...store.songs]
+  return sortSongs(searched, sortKey.value, sortDirection.value)
 })
 
 async function deleteSong(song) {
