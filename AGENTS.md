@@ -2,34 +2,34 @@
 
 Mobile-first PWA songbook for guitarists. Vue 3, Pinia, Tailwind v4, Firebase, pnpm.
 
-## Setup
+## Code exploration
 
-- Install deps: `pnpm install`
-- Dev server: `pnpm dev`
-- Production build: `pnpm build`
-- Preview build: `pnpm preview`
-- Run tests (watch): `pnpm test`
-- Run tests (single): `pnpm test:run`
+- Use `codegraph_explore` via `execute` first for: how does X work, architecture, bugs, where/what to edit. Always pass `projectPath` = repo root (this server has no default project). Treat its output as already Read; do not re-read those files.
+- Use `read`/`grep`/`glob` directly only for listing directories or reading a specific already-known file.
+
+## Language
+
+- Use `GLOSSARY.md` for domain terms (Canción, Lista).
+- UI strings in Spanish, code/comments/technical artifacts in English.
+
+## Setup & verify
+
+- Dev with `pnpm dev` (scripts in `package.json` are source of truth).
+- Verify every change with `pnpm test:run` and `pnpm build` green.
 
 ## Code style
 
-- Pure JavaScript (no TypeScript)
-- `function` declarations for named exports (no arrow functions)
-- No semicolons, 2-space indent
-- Single quotes in JS, double quotes in HTML templates
-- Composables: named `use*`, return object, top-level in `<script setup>`
-- Stores: Pinia setup syntax (`defineStore('name', () => { ... })`)
-- UI strings in Spanish; code/comments/technical artifacts in English
-- CSS: Tailwind utilities first; scoped `<style>` for custom CSS; OKLCH tokens via `var(--color-*)`
-- Cross-component events: `window.dispatchEvent(new CustomEvent('chordshift-*'))`
-- TabBar: placed in `App.vue` outside `<router-view>` with `fixed bottom-0` positioning; hidden on detail/editor views via `route.name` check in `showTabBar` computed
-- IDs: `uuid()` from `src/utils/uuid.js`
+- Pure JavaScript with `function` declarations for named exports, no semicolons, 2-space indent.
+- Single quotes in JS, double quotes in HTML templates.
+- Composables named `use*` returning object, top-level in `<script setup>`.
+- Stores with Pinia setup syntax (`defineStore('name', () => { ... })`).
+- CSS Tailwind utilities first, scoped `<style>` for custom CSS, OKLCH tokens via `var(--color-*)`.
+- Cross-component events via `window.dispatchEvent(new CustomEvent('chordshift-*'))`.
+- TabBar lives in `App.vue` outside `<router-view>` with `fixed bottom-0`, hidden on detail/editor via `route.name` in `showTabBar`.
+- IDs via `uuid()` from `src/utils/uuid.js`.
 
-## Firebase & sync gotchas
+## Firebase
 
-- `signInWithPopup` blocked on some browsers → fallback to `signInWithRedirect`
-- OAuth redirect uses `window.location.origin + /__/auth/handler` — domain must be in Google Cloud Console OAuth client (Authorized JS origins + redirect URIs)
-- Sync listener guard: `cloudData.deviceId === getDeviceId()` → skip (own writes)
-- `_syncInitialSkip` skips first snapshot (local trigger from upload)
-- `_syncedAt` timestamp prevents overwriting newer local data with stale cloud data
-- Reference sync pattern: `practice-timer-v2/src/firebase/sync.js`
+- Auth uses `signInWithPopup` with `signInWithRedirect` fallback on `auth/popup-blocked`. On `redirect_uri_mismatch` in production read `docs/firebase-auth-vercel.md`.
+- Sync guards: skip own writes (`cloudData.deviceId === getDeviceId()`), skip first snapshot (`_syncInitialSkip`), never overwrite newer local data (`_syncedAt`).
+- Reference sync pattern: `practice-timer-v2/src/firebase/sync.js`.
