@@ -22,6 +22,11 @@ const routes = [
     component: () => import('../views/PlaylistDetail.vue'),
   },
   {
+    path: '/playlists/:id/add',
+    name: 'playlist-add-songs',
+    component: () => import('../views/PlaylistAddSongs.vue'),
+  },
+  {
     path: '/playlists/:id/edit',
     name: 'playlist-edit',
     component: () => import('../views/PlaylistEditor.vue'),

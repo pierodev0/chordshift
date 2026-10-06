@@ -91,7 +91,7 @@
 
       <button
         class="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-accent text-white border-none shadow-xl shadow-accent/30 transition-all duration-200 hover:bg-accent-hover hover:shadow-accent/40 active:scale-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center cursor-pointer z-40"
-        @click="showAddSheet = true"
+        @click="goToAddSongs"
         aria-label="Agregar canciones"
       >
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -102,41 +102,6 @@
 
     <div v-else class="flex-1 flex items-center justify-center text-ink-soft text-sm">
       Lista no encontrada
-    </div>
-
-    <div v-if="showAddSheet" class="fixed inset-0 z-50" @click="showAddSheet = false">
-      <div class="absolute inset-0 bg-ink/40" />
-      <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[70vh] flex flex-col" @click.stop>
-        <div class="w-8 h-1 rounded-full bg-border mx-auto mt-3 mb-1" />
-        <p class="text-center text-xs font-bold text-ink-soft tracking-widest uppercase px-4 py-2">Agregar canciones</p>
-        <div v-if="allSongs.length === 0" class="flex-1 flex items-center justify-center text-ink-soft text-sm p-8">
-          No hay canciones disponibles. Creá algunas primero.
-        </div>
-        <div v-else class="flex-1 overflow-y-auto px-4 pb-2">
-          <div
-            v-for="song in allSongs"
-            :key="song.id"
-            class="flex items-center gap-3 py-2.5 border-b border-border-light last:border-none"
-            :class="{ 'opacity-50': selectedIds.includes(song.id) && removeMode }"
-          >
-            <input
-              type="checkbox"
-              :checked="selectedIds.includes(song.id)"
-              @change="toggleSong(song.id)"
-              class="w-4 h-4 rounded accent-accent shrink-0"
-            />
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold text-ink truncate">{{ song.title }}</p>
-              <p v-if="song.artist" class="text-xs text-ink-soft truncate">{{ song.artist }}</p>
-            </div>
-          </div>
-        </div>
-        <div class="px-4 py-3 border-t border-border bg-white shrink-0">
-          <AppButton full size="lg" :disabled="selectedIds.length === 0" @click="saveSongs">
-            Agregar ({{ selectedIds.length }})
-          </AppButton>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -149,7 +114,6 @@ import { usePlaylistsStore } from '../stores/playlistsStore'
 import draggable from 'vuedraggable'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import AppIconButton from '../components/AppIconButton.vue'
-import AppButton from '../components/AppButton.vue'
 import SongCard from '../components/SongCard.vue'
 
 const route = useRoute()
@@ -158,11 +122,8 @@ const songsStore = useSongsStore()
 const playlistsStore = usePlaylistsStore()
 
 const editing = ref(false)
-const showAddSheet = ref(false)
-const selectedIds = ref([])
 
 const playlist = computed(() => playlistsStore.getById(route.params.id))
-const allSongs = computed(() => songsStore.sortedSongs.filter((s) => !playlist.value?.songIds.includes(s.id)))
 
 const dragItems = ref([])
 let syncing = false
@@ -188,18 +149,8 @@ function getSong(id) {
   return songsStore.getById(id)
 }
 
-function toggleSong(id) {
-  const i = selectedIds.value.indexOf(id)
-  if (i === -1) selectedIds.value.push(id)
-  else selectedIds.value.splice(i, 1)
-}
-
-function saveSongs() {
-  for (const id of selectedIds.value) {
-    playlistsStore.addSong(route.params.id, id)
-  }
-  selectedIds.value = []
-  showAddSheet.value = false
+function goToAddSongs() {
+  router.push({ name: 'playlist-add-songs', params: { id: route.params.id } })
 }
 
 function removeSong(songId) {
@@ -216,6 +167,5 @@ function deletePlaylist() {
 onMounted(() => {
   if (!songsStore.loaded) songsStore.load()
   if (!playlistsStore.loaded) playlistsStore.load()
-  selectedIds.value = []
 })
 </script>
