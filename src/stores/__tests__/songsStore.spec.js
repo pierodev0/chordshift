@@ -10,10 +10,10 @@ const { mockSongs, mockAdapter } = vi.hoisted(() => {
       getAll: vi.fn(() => [...songs]),
       getById: vi.fn((id) => songs.find((s) => s.id === id) || null),
       create: vi.fn((song) => { songs.unshift(song); return song }),
-      update: vi.fn((song) => {
+      update: vi.fn((song, opts) => {
         const idx = songs.findIndex((s) => s.id === song.id)
         if (idx === -1) return null
-        songs[idx] = { ...songs[idx], ...song, updatedAt: Date.now() }
+        songs[idx] = { ...songs[idx], ...song, updatedAt: opts?.touch === false ? songs[idx].updatedAt : Date.now() }
         return songs[idx]
       }),
       delete: vi.fn((id) => {
@@ -84,5 +84,54 @@ describe('songsStore', () => {
     const sorted = store.sortedSongs
     expect(sorted[0].id).toBe(newer.id)
     expect(sorted[1].id).toBe(older.id)
+  })
+
+  it('create() defaults playCount to 0 and lastPlayedAt to null', () => {
+    const store = useSongsStore()
+    const song = store.create({ title: 'Tocada' })
+
+    expect(song.playCount).toBe(0)
+    expect(song.lastPlayedAt).toBeNull()
+  })
+
+  it('recordPlay() increments playCount without touching updatedAt', () => {
+    const store = useSongsStore()
+    const song = store.create({ title: 'Tocada' })
+    const originalUpdatedAt = song.updatedAt
+
+    const updated = store.recordPlay(song.id)
+
+    expect(updated.playCount).toBe(1)
+    expect(updated.lastPlayedAt).toEqual(expect.any(Number))
+    expect(updated.updatedAt).toBe(originalUpdatedAt)
+    expect(store.recordPlay(song.id).playCount).toBe(2)
+  })
+
+  it('recordPlay() returns null for unknown id', () => {
+    const store = useSongsStore()
+    expect(store.recordPlay('missing')).toBeNull()
+  })
+
+  it('mostPlayed returns top 5 by playCount desc with lastPlayedAt tiebreak', () => {
+    const store = useSongsStore()
+    const songs = []
+    for (let i = 0; i < 7; i++) songs.push(store.create({ title: 'Song ' + i }))
+    songs.forEach((s, i) => {
+      for (let n = 0; n < i; n++) store.recordPlay(s.id)
+    })
+    store.recordPlay(songs[0].id)
+
+    const top = store.mostPlayed
+    expect(top.length).toBe(5)
+    expect(top.map((s) => s.title)).toEqual(['Song 6', 'Song 5', 'Song 4', 'Song 3', 'Song 2'])
+  })
+
+  it('load() migrates legacy songs without play fields', () => {
+    mockSongs.push({ id: 'legacy', title: 'Legacy', updatedAt: Date.now() })
+    const store = useSongsStore()
+    store.load()
+
+    expect(store.getById('legacy').playCount).toBe(0)
+    expect(store.getById('legacy').lastPlayedAt).toBeNull()
   })
 })

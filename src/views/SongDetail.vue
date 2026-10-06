@@ -1,6 +1,6 @@
 <template>
   <div class="h-dvh flex flex-col bg-paper">
-    <AppPageHeader title="Canción" @back="router.push({ name: 'home' })">
+    <AppPageHeader title="Canción" @back="goBack">
       <template #actions>
         <AppIconButton
           v-if="song"
@@ -13,7 +13,7 @@
         </AppIconButton>
         <AppIconButton
           v-if="song"
-          @click="router.push({ name: 'song-edit', params: { id: song.id } })"
+          @click="router.push({ name: 'song-edit', params: { id: song.id }, query: { ...route.query } })"
           aria-label="Editar"
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-soft">
@@ -260,7 +260,13 @@
             <ChordLegend :chords="chords" />
           </div>
 
-          <div class="font-mono text-sm sm:text-base lg:text-lg leading-loose whitespace-pre-wrap" :class="markers.length > 0 || validLoops.length > 0 ? 'pb-40' : 'pb-24'" v-html="renderedHtml" />
+          <div class="font-mono text-sm sm:text-base lg:text-lg leading-loose whitespace-pre-wrap" v-html="renderedHtml" />
+
+          <div class="pb-24">
+            <AppButton full size="lg" :disabled="countedThisVisit" @click="markAsPlayed">
+              {{ countedThisVisit ? 'Tocada ✓' : 'Marcar como tocada' }}
+            </AppButton>
+          </div>
         </div>
       </div>
 
@@ -424,6 +430,7 @@ import { useChordTransposer } from '../composables/useChordTransposer'
 import { useAudioCache } from '../composables/useAudioCache'
 import { usePreferences } from '../composables/usePreferences'
 import AppPageHeader from '../components/AppPageHeader.vue'
+import AppButton from '../components/AppButton.vue'
 import AppIconButton from '../components/AppIconButton.vue'
 import AppBottomSheet from '../components/AppBottomSheet.vue'
 import ChordLegend from '../components/ChordLegend.vue'
@@ -493,6 +500,23 @@ const showManual = computed(() => manualTotal.value > 0 && !showMp3.value && !sh
 const manualDisplayTime = computed(() => formatYtTime(manualCurrentTime.value) + ' / ' + formatYtTime(manualTotal.value))
 
 const playlistId = computed(() => route.query.playlistId)
+const fromTab = computed(() => route.query.from)
+const countedThisVisit = ref(false)
+
+function markAsPlayed() {
+  if (!song.value || countedThisVisit.value) return
+  store.recordPlay(song.value.id)
+  countedThisVisit.value = true
+}
+
+function backTarget() {
+  if (playlistId.value) return { name: 'playlist-detail', params: { id: playlistId.value } }
+  return { name: fromTab.value === 'home' ? 'home' : 'songs' }
+}
+
+function goBack() {
+  router.push(backTarget())
+}
 const prevSongId = computed(() => {
   if (!playlistId.value || !song.value) return null
   const pl = playlistsStore.getById(playlistId.value)
@@ -513,16 +537,12 @@ const showNav = computed(() => !!playlistId.value)
 
 function goToPrevSong() {
   if (!prevSongId.value) return
-  const r = { name: 'song-detail', params: { id: prevSongId.value } }
-  if (playlistId.value) r.query = { playlistId: playlistId.value }
-  router.push(r)
+  router.push({ name: 'song-detail', params: { id: prevSongId.value }, query: { ...route.query } })
 }
 
 function goToNextSong() {
   if (!nextSongId.value) return
-  const r = { name: 'song-detail', params: { id: nextSongId.value } }
-  if (playlistId.value) r.query = { playlistId: playlistId.value }
-  router.push(r)
+  router.push({ name: 'song-detail', params: { id: nextSongId.value }, query: { ...route.query } })
 }
 const transposePos = 'bottom-4 left-4'
 const sectionsPos = 'bottom-4 left-[80px]'
@@ -672,6 +692,7 @@ watch(() => route.params.id, () => {
   showSheet.value = false
   showSectionSheet.value = false
   autoScrolling.value = false
+  countedThisVisit.value = false
   audioUrl.value = null
   resetManualPlayer()
   const newS = store.getById(route.params.id)
@@ -778,7 +799,7 @@ async function deleteSong() {
     await deleteAudio(id)
   }
   store.remove(id)
-  router.push({ name: 'home' })
+  router.push(backTarget())
 }
 
 onBeforeUnmount(() => {

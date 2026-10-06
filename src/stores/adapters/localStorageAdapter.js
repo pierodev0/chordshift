@@ -41,11 +41,12 @@ export const localStorageAdapter = {
     return song
   },
 
-  update(song) {
+  update(song, opts = {}) {
     const songs = loadAll()
     const i = songs.findIndex((s) => s.id === song.id)
     if (i === -1) return null
-    songs[i] = { ...songs[i], ...song, updatedAt: Date.now() }
+    const updatedAt = opts.touch === false ? songs[i].updatedAt : Date.now()
+    songs[i] = { ...songs[i], ...song, updatedAt }
     saveAll()
     return songs[i]
   },

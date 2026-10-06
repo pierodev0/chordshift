@@ -7,13 +7,29 @@ export const useSongsStore = defineStore('songs', () => {
   const songs = ref([])
   const loaded = ref(false)
 
+  const playDefaults = { playCount: 0, lastPlayedAt: null }
+
+  function withPlayDefaults(song) {
+    return {
+      ...playDefaults,
+      ...song,
+    }
+  }
+
   function load() {
-    songs.value = [...localStorageAdapter.getAll()]
+    songs.value = localStorageAdapter.getAll().map(withPlayDefaults)
     loaded.value = true
   }
 
   const sortedSongs = computed(() =>
     [...songs.value].sort((a, b) => b.updatedAt - a.updatedAt),
+  )
+
+  const mostPlayed = computed(() =>
+    [...songs.value]
+      .filter((s) => (s.playCount || 0) > 0)
+      .sort((a, b) => (b.playCount || 0) - (a.playCount || 0) || (b.lastPlayedAt || 0) - (a.lastPlayedAt || 0))
+      .slice(0, 5),
   )
 
   function getById(id) {
@@ -36,6 +52,7 @@ function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDela
       scrollDelay: scrollDelay !== undefined ? scrollDelay : 'auto',
       duration: duration > 0 ? Math.round(duration) : 0,
       preferredSource: '',
+      ...playDefaults,
       transpose: 0,
       markers: [],
       loops: [],
@@ -64,12 +81,28 @@ function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDela
     notifyChange()
   }
 
+  function recordPlay(id) {
+    const current = getById(id)
+    if (!current) return null
+    const updated = localStorageAdapter.update({
+      id,
+      playCount: (current.playCount || 0) + 1,
+      lastPlayedAt: Date.now(),
+    }, { touch: false })
+    if (updated) {
+      const i = songs.value.findIndex((s) => s.id === id)
+      if (i !== -1) songs.value[i] = withPlayDefaults(updated)
+      notifyChange()
+    }
+    return updated ? withPlayDefaults(updated) : null
+  }
+
   function exportAll() {
     return localStorageAdapter.getAll().map(({ audioKey, ...song }) => song)
   }
 
   function importAll(songs) {
-    const sanitized = songs.map(({ audioKey, ...song }) => song)
+    const sanitized = songs.map(({ audioKey, ...song }) => withPlayDefaults(song))
     localStorageAdapter.replaceAll(sanitized)
     songs.value = [...sanitized]
     loaded.value = true
@@ -82,5 +115,5 @@ function create({ title, artist, content, capo, audioKey, youtubeUrl, scrollDela
     notifyChange()
   }
 
-  return { songs, loaded, sortedSongs, getById, create, update, remove, load, exportAll, importAll, clearAll }
+  return { songs, loaded, sortedSongs, mostPlayed, getById, create, update, remove, recordPlay, load, exportAll, importAll, clearAll }
 })

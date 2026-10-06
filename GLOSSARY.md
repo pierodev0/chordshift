@@ -11,3 +11,7 @@ _Avoid_: Song, tema
 **Lista**:
 Colección ordenada de canciones para practicar.
 _Avoid_: Playlist, setlist
+
+**Tocada**:
+Canción que el guitarrista marcó explícitamente como interpretada.
+_Avoid_: Reproducida, terminada

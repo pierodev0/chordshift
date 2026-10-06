@@ -25,10 +25,10 @@ const songsStore = useSongsStore()
 const playlistsStore = usePlaylistsStore()
 
 const showTabBar = computed(() =>
-  ['home', 'playlists', 'settings'].includes(route.name),
+  ['home', 'songs', 'playlists', 'settings'].includes(route.name),
 )
 
-const tabMap = { home: 'songs', playlists: 'playlists', settings: 'settings' }
+const tabMap = { home: 'home', songs: 'songs', playlists: 'playlists', settings: 'settings' }
 const currentTab = computed(() => tabMap[route.name] || 'songs')
 
 let unsubAuth = null

@@ -1,7 +1,7 @@
 <template>
   <div class="h-dvh flex flex-col bg-paper">
     <header class="flex items-center justify-between px-4 py-3.5 border-b border-border bg-white/80 backdrop-blur-sm shrink-0">
-      <h1 class="text-lg font-bold text-accent tracking-tight">ChordShift</h1>
+      <h1 class="text-lg font-bold text-accent tracking-tight">Canciones</h1>
       <span class="text-[10px] text-ink-subtle font-semibold uppercase tracking-widest">{{ store.sortedSongs.length }} canciones</span>
     </header>
 

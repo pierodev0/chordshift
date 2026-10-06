@@ -194,9 +194,9 @@ function removeAudio() {
 
 function goBack() {
   if (isEdit.value) {
-    router.push({ name: 'song-detail', params: { id: route.params.id } })
+    router.push({ name: 'song-detail', params: { id: route.params.id }, query: { ...route.query } })
   } else {
-    router.push({ name: 'home' })
+    router.push({ name: 'songs' })
   }
 }
 
@@ -221,7 +221,7 @@ async function save() {
       const { deleteAudio } = useAudioCache()
       await deleteAudio(route.params.id)
     }
-    router.push({ name: 'song-detail', params: { id: route.params.id } })
+    router.push({ name: 'song-detail', params: { id: route.params.id }, query: { ...route.query } })
   } else {
     const song = store.create({
       title: title.value,
