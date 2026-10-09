@@ -17,6 +17,14 @@ Mobile-first PWA songbook for guitarists. Vue 3, Pinia, Tailwind v4, Firebase, p
 - Dev with `pnpm dev` (scripts in `package.json` are source of truth).
 - Verify every change with `pnpm test:run` and `pnpm build` green.
 
+## Testing
+
+- Runner: Vitest with `happy-dom` + `globals: true` (`vite.config.js` is source of truth).
+- Co-locate specs as `__tests__/<name>.spec.js` next to the unit under test.
+- Unit-test pure logic directly (e.g. `useChordTransposer`, `clampSemitones`); mock externals with `vi.mock` (e.g. `tone` in `useAudioPitch.spec.js`).
+- Component specs use `@vue/test-utils` + mocked router only where needed (see `SongCard.spec.js`).
+- Commands: `pnpm test:run` for full suite, `pnpm vitest run <path>` for a single spec file. Never pass `--reporter=basic` (unsupported flag breaks the run).
+
 ## Code style
 
 - Pure JavaScript with `function` declarations for named exports, no semicolons, 2-space indent.

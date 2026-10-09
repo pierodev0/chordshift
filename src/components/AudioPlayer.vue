@@ -147,10 +147,9 @@ const props = defineProps({
   showPrev: Boolean,
   showNext: Boolean,
 })
-const emit = defineEmits(['toggleAutoScroll', 'loaded', 'openLab', 'openDelaySheet', 'ended', 'prev', 'next'])
+const emit = defineEmits(['toggleAutoScroll', 'loaded', 'openLab', 'openDelaySheet', 'ended', 'prev', 'next', 'pitchError'])
 
 const audioEl = ref(null)
-const pitchedEl = ref(null)
 const playing = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
@@ -181,29 +180,24 @@ const displayTime = computed(() => {
 function togglePlay() {
   if (!audioEl.value) return
   if (playing.value) {
-    activeEl().pause()
+    audioEl.value.pause()
   } else {
     if (props.loopRange) {
-      activeEl().currentTime = props.loopRange.from
+      audioEl.value.currentTime = props.loopRange.from
     }
-    activeEl().play()
+    audioEl.value.play()
   }
   playing.value = !playing.value
 }
 
-function activeEl() {
-  return pitchedEl.value || audioEl.value
-}
-
 function onTimeUpdate() {
-  const el = activeEl()
-  if (!el) return
-  const t = el.currentTime
+  if (!audioEl.value) return
+  const t = audioEl.value.currentTime
   currentTime.value = t
   progress.value = duration.value ? (t / duration.value) * 100 : 0
 
   if (props.loopRange && t >= props.loopRange.to) {
-    el.currentTime = props.loopRange.from
+    audioEl.value.currentTime = props.loopRange.from
     return
   }
 
@@ -240,46 +234,9 @@ function onLoaded() {
   audioEl.value.playbackRate = playbackRate.value
   audioEl.value.preservesPitch = true
   emit('loaded', audioEl.value.duration)
-  applyPitch(props.semitones)
-}
-
-function syncTimeEvents() {
-  if (!audioEl.value || !pitchedEl.value) return
-  pitchedEl.value.ontimeupdate = () => onTimeUpdate()
-  pitchedEl.value.onended = () => onEnded()
-}
-
-function applyPitch(semitones) {
-  if (!audioEl.value) return
-  const token = ++pitchToken
-  const wasPlaying = playing.value && !activeEl().paused
-  activeEl().pause()
-  detachPitch()
-  const previous = pitchedEl.value
-  pitchedEl.value = null
-  if (previous) {
-    previous.ontimeupdate = null
-    previous.onended = null
-    try { previous.pause() } catch { /* best-effort teardown */ }
-    try { previous.removeAttribute('src') } catch { /* best-effort teardown */ }
-  }
-  const resumeTime = audioEl.value.currentTime || 0
-  attachPitch(audioEl.value, semitones)
-    .then(({ attached, element }) => {
-      if (token !== pitchToken || !audioEl.value) return
-      if (!attached || element === audioEl.value) return
-      pitchedEl.value = element
-      syncTimeEvents()
-      audioEl.value.pause()
-      if (wasPlaying) {
-        pitchedEl.value.currentTime = resumeTime
-        pitchedEl.value.play().catch(() => {})
-      }
-    })
-    .catch(() => {
-      if (token !== pitchToken || !audioEl.value) return
-      if (wasPlaying) audioEl.value.play().catch(() => {})
-    })
+  attachPitch(audioEl.value, props.semitones).then((attached) => {
+    if (!attached && props.semitones) emit('pitchError')
+  })
 }
 
 function onEnded() {
@@ -288,11 +245,10 @@ function onEnded() {
 }
 
 function seek(e) {
-  const el = activeEl()
-  if (!el || !duration.value) return
+  if (!audioEl.value || !duration.value) return
   const rect = e.currentTarget.getBoundingClientRect()
   const x = (e.clientX - rect.left) / rect.width
-  el.currentTime = x * duration.value
+  audioEl.value.currentTime = x * duration.value
 }
 
 function formatTime(t) {
@@ -307,27 +263,20 @@ watch(playbackRate, (rate) => {
     audioEl.value.playbackRate = rate
     audioEl.value.preservesPitch = true
   }
-  if (pitchedEl.value) {
-    pitchedEl.value.playbackRate = rate
-    pitchedEl.value.preservesPitch = true
-  }
 })
 
 watch(() => props.semitones, (semitones) => {
   if (!audioEl.value) return
-  const active = pitchedEl.value
-  if (active) setSemitones(semitones)
-  if (!semitones) {
-    applyPitch(semitones)
-    return
-  }
-  if (!active) applyPitch(semitones)
+  const token = ++pitchToken
+  attachPitch(audioEl.value, semitones).then((attached) => {
+    if (token !== pitchToken) return
+    if (!attached && semitones) emit('pitchError')
+  })
 })
 
 watch(() => props.audioUrl, () => {
   pitchToken += 1
   detachPitch()
-  pitchedEl.value = null
   playing.value = false
   currentTime.value = 0
   duration.value = 0
@@ -339,7 +288,6 @@ watch(() => props.audioUrl, () => {
 onBeforeUnmount(() => {
   pitchToken += 1
   detachPitch()
-  pitchedEl.value = null
   if (audioEl.value) {
     audioEl.value.pause()
     audioEl.value.src = ''

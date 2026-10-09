@@ -4,6 +4,7 @@ import { clampSemitones, MAX_PITCH_SHIFT, useAudioPitch } from '../useAudioPitch
 vi.mock('tone', () => ({
   start: vi.fn(),
   getContext: vi.fn(),
+  connect: vi.fn(),
   PitchShift: vi.fn(),
 }))
 
@@ -29,46 +30,57 @@ describe('useAudioPitch', () => {
     vi.clearAllMocks()
   })
 
-  it('does not build a pitch graph at 0 semitones', async () => {
+  it('returns true at 0 semitones without building a graph', async () => {
+    const tone = await import('tone')
     const { attach, enabled } = useAudioPitch()
     const audio = document.createElement('audio')
-    expect(await attach(audio, 0)).toEqual({ attached: false, element: audio })
+    expect(await attach(audio, 0)).toBe(true)
     expect(enabled.value).toBe(false)
+    expect(tone.PitchShift).not.toHaveBeenCalled()
   })
 
   it('routes local audio through PitchShift with clamped semitones', async () => {
     const tone = await import('tone')
-    const connect = vi.fn()
-    const disconnect = vi.fn()
+    const mediaStream = { connect: vi.fn(), disconnect: vi.fn() }
+    const createMediaElementSource = vi.fn(() => mediaStream)
     const toDestination = vi.fn()
     const dispose = vi.fn()
     let instance = null
-    tone.PitchShift.mockImplementation(function (pitch) {
-      instance = { pitch, toDestination, dispose }
+    tone.PitchShift.mockImplementation(function () {
+      instance = { pitch: 0, wet: { value: 0 }, toDestination, dispose }
       return instance
     })
     tone.getContext.mockReturnValue({
-      rawContext: { createMediaElementSource: vi.fn(() => ({ connect, disconnect })) },
+      rawContext: { createMediaElementSource, resume: vi.fn() },
     })
 
     const { attach, detach, enabled, setSemitones } = useAudioPitch()
     const audio = document.createElement('audio')
     audio.src = 'song.mp3'
-    const result = await attach(audio, MAX_PITCH_SHIFT + 4)
-    expect(result.attached).toBe(true)
-    expect(result.element).not.toBe(audio)
-    expect(result.element.src).toBe(audio.src)
-    expect(result.element.crossOrigin).toBe('anonymous')
+    expect(await attach(audio, MAX_PITCH_SHIFT + 4)).toBe(true)
     expect(enabled.value).toBe(true)
-    expect(tone.PitchShift).toHaveBeenCalledWith(MAX_PITCH_SHIFT)
-    expect(connect).toHaveBeenCalledTimes(1)
+    expect(createMediaElementSource).toHaveBeenCalledTimes(1)
+    expect(tone.connect).toHaveBeenCalledWith(mediaStream, instance)
+    expect(instance.wet.value).toBe(1)
+    expect(instance.pitch).toBe(MAX_PITCH_SHIFT)
+
+    // Second transpose reuses the graph instead of creating a new MediaElementSource
+    expect(await attach(audio, -3)).toBe(true)
+    expect(createMediaElementSource).toHaveBeenCalledTimes(1)
+    expect(instance.pitch).toBe(-3)
+
+    // Back to zero bypasses the effect without tearing down the graph
+    expect(await attach(audio, 0)).toBe(true)
+    expect(instance.wet.value).toBe(0)
+    expect(instance.pitch).toBe(0)
 
     setSemitones(-MAX_PITCH_SHIFT - 2)
+    expect(instance.wet.value).toBe(1)
     expect(instance.pitch).toBe(-MAX_PITCH_SHIFT)
 
     detach()
     expect(dispose).toHaveBeenCalledTimes(1)
-    expect(disconnect).toHaveBeenCalledTimes(1)
+    expect(mediaStream.disconnect).toHaveBeenCalledTimes(1)
     expect(enabled.value).toBe(false)
   })
 
@@ -80,8 +92,7 @@ describe('useAudioPitch', () => {
 
     const { attach, enabled } = useAudioPitch()
     const audio = document.createElement('audio')
-    const result = await attach(audio, 2)
-    expect(result).toEqual({ attached: false, element: audio })
+    expect(await attach(audio, 2)).toBe(false)
     expect(enabled.value).toBe(false)
   })
 })

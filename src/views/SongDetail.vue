@@ -53,6 +53,7 @@
         :showNext="showNav && !!nextSongId"
         @toggleAutoScroll="autoScrolling = !autoScrolling"
         @loaded="songDuration = $event"
+        @pitchError="onPitchError"
         @openLab="router.push({ name: 'song-audio', params: { id: song.id } })"
         @openDelaySheet="showDelaySheet = true"
         @prev="goToPrevSong"
@@ -668,6 +669,12 @@ function setSourceTab(tab) {
   if (song.value) {
     store.update(song.value.id, { preferredSource: tab })
   }
+}
+
+function onPitchError() {
+  window.dispatchEvent(new CustomEvent('chordshift-toast', {
+    detail: { message: 'No se pudo cambiar el tono del audio, sonará en tono original', type: 'error' },
+  }))
 }
 
 function computeAutoDelay(duration) {

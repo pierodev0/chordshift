@@ -23,65 +23,66 @@ export function useAudioPitch() {
     } catch {
       // MediaElementSource disconnect is best-effort on teardown
     }
-    if (nodes?.element) {
-      try {
-        nodes.element.crossOrigin = null
-      } catch {
-        // crossOrigin cleanup is optional
-      }
-      try {
-        nodes.element.removeAttribute('crossorigin')
-      } catch {
-        // crossOrigin cleanup is optional
-      }
-    }
     nodes = null
     enabled.value = false
   }
 
-  async function attach(audioEl, semitones = 0) {
+  async function ensureGraph(audioEl) {
+    if (nodes?.element === audioEl && nodes?.pitchShift) return nodes
     disposeNodes()
     error.value = null
-    if (!audioEl) return { attached: false, element: audioEl }
-    const steps = clampSemitones(semitones)
-    if (steps === 0) return { attached: false, element: audioEl }
+    if (!audioEl) return null
 
     let ToneModule
     try {
       ToneModule = await import('tone')
     } catch (err) {
       error.value = err
-      return { attached: false, element: audioEl }
+      return null
     }
 
     try {
-      // MediaElementSource can only be created once per element per context,
-      // so clone the element before routing it through the pitch graph.
-      const element = audioEl.cloneNode()
-      element.src = audioEl.src
-      element.currentTime = audioEl.currentTime || 0
-      element.playbackRate = audioEl.playbackRate || 1
-      element.preservesPitch = true
-      element.crossOrigin = 'anonymous'
       await ToneModule.start()
       const context = ToneModule.getContext()
-      const mediaStream = context.rawContext.createMediaElementSource(element)
-      const pitchShift = new ToneModule.PitchShift(steps)
-      mediaStream.connect(pitchShift)
+      await context.rawContext.resume()
+      const mediaStream = context.rawContext.createMediaElementSource(audioEl)
+      const pitchShift = new ToneModule.PitchShift(0)
+      pitchShift.wet.value = 0
+      ToneModule.connect(mediaStream, pitchShift)
       pitchShift.toDestination()
-      nodes = { element, pitchShift, source: mediaStream }
+      nodes = { element: audioEl, pitchShift, source: mediaStream }
       enabled.value = true
-      return { attached: true, element }
+      return nodes
     } catch (err) {
       error.value = err
       disposeNodes()
-      return { attached: false, element: audioEl }
+      return null
     }
+  }
+
+  async function attach(audioEl, semitones = 0) {
+    error.value = null
+    const steps = clampSemitones(semitones)
+    if (!audioEl) return false
+    if (steps === 0) {
+      if (nodes?.pitchShift) {
+        nodes.pitchShift.pitch = 0
+        nodes.pitchShift.wet.value = 0
+      }
+      return true
+    }
+    const graph = await ensureGraph(audioEl)
+    if (!graph) return false
+    graph.pitchShift.wet.value = 1
+    graph.pitchShift.pitch = steps
+    return true
   }
 
   function setSemitones(semitones) {
     if (!nodes?.pitchShift) return
-    nodes.pitchShift.pitch = clampSemitones(semitones)
+    const steps = clampSemitones(semitones)
+    nodes.pitchShift.wet.value = steps === 0 ? 0 : 1
+    nodes.pitchShift.pitch = steps
   }
 
   function detach() {
