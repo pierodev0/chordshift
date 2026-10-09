@@ -43,6 +43,33 @@
 
       <section>
         <h2 class="text-[11px] font-bold text-ink-soft uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          Notación
+        </h2>
+        <div class="bg-white rounded-2xl border border-border overflow-hidden divide-y divide-border">
+          <div class="px-4 py-3.5">
+            <span class="block text-sm font-medium text-ink">Alteraciones</span>
+            <span class="block text-[11px] text-ink-subtle font-normal mt-0.5">Notación usada al transponer acordes</span>
+          </div>
+          <div class="flex items-center gap-2 px-4 py-3.5">
+            <button
+              class="flex-1 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer"
+              :class="accidental === 'sharps' ? 'bg-accent-subtle text-accent border-accent' : 'bg-white text-ink-soft border-border hover:text-ink'"
+              :aria-pressed="accidental === 'sharps'"
+              @click="setAccidental('sharps')"
+            >Sostenidos (♯)</button>
+            <button
+              class="flex-1 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer"
+              :class="accidental === 'flats' ? 'bg-accent-subtle text-accent border-accent' : 'bg-white text-ink-soft border-border hover:text-ink'"
+              :aria-pressed="accidental === 'flats'"
+              @click="setAccidental('flats')"
+            >Bemoles (♭)</button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-[11px] font-bold text-ink-soft uppercase tracking-widest mb-3 flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Copia de seguridad
         </h2>
@@ -208,7 +235,7 @@ const router = useRouter()
 const songsStore = useSongsStore()
 const playlistsStore = usePlaylistsStore()
 const { clearAll: clearAudio } = useAudioCache()
-const { chordColor, setChordColor } = usePreferences()
+const { accidental, chordColor, setAccidental, setChordColor } = usePreferences()
 const chordSwatches = ['#f97316', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7']
 const fileInput = ref(null)
 const backups = ref([])

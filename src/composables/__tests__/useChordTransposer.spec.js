@@ -21,9 +21,22 @@ describe('transposeNote', () => {
     expect(transposeNote('G', 5)).toBe('C')
   })
 
-  it('handles flat notation', () => {
+  it('keeps original spelling when no transposition is applied', () => {
+    expect(transposeNote('Db', 0)).toBe('Db')
+    expect(transposeNote('C#', 0)).toBe('C#')
+  })
+
+  it('uses sharps by default', () => {
+    expect(transposeNote('C', 1)).toBe('C#')
     expect(transposeNote('Db', 1)).toBe('D')
     expect(transposeNote('Eb', 2)).toBe('F')
+  })
+
+  it('uses flats when preferred', () => {
+    expect(transposeNote('C', 1, 'flats')).toBe('Db')
+    expect(transposeNote('D', 1, 'flats')).toBe('Eb')
+    expect(transposeNote('Db', 1, 'flats')).toBe('D')
+    expect(transposeNote('A', 1, 'flats')).toBe('Bb')
   })
 
   it('wraps around octave correctly', () => {

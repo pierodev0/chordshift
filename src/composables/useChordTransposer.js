@@ -29,22 +29,20 @@ export function useChordTransposer() {
     return chordLike / words.length > 0.4 && !hasLongWords
   }
 
-  function transposeNote(chordPart, steps) {
+  function transposeNote(chordPart, steps, accidental = 'sharps') {
+    const preferFlats = accidental === 'flats'
     return chordPart.replace(/[A-G][b#]?/, (note) => {
-      let index = notes.indexOf(note)
-      let useFlats = false
+      if (!steps) return note
 
-      if (index === -1) {
-        index = flats.indexOf(note)
-        if (index !== -1) useFlats = true
-      }
+      let index = notes.indexOf(note)
+      if (index === -1) index = flats.indexOf(note)
 
       if (index === -1) return note
 
       let newIndex = (index + steps) % 12
       while (newIndex < 0) newIndex += 12
 
-      return useFlats ? flats[newIndex] : notes[newIndex]
+      return preferFlats ? flats[newIndex] : notes[newIndex]
     })
   }
 

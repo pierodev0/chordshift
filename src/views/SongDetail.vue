@@ -448,7 +448,7 @@ import SectionNavSheet from '../components/SectionNavSheet.vue'
 
 const { chordRegex, isChordLine, transposeNote, escapeHTML } = useChordTransposer()
 const { loadAudio, deleteAudio } = useAudioCache()
-const { chordColor } = usePreferences()
+const { accidental, chordColor } = usePreferences()
 
 const route = useRoute()
 const router = useRouter()
@@ -869,8 +869,8 @@ const keyText = computed(() =>
 )
 
 function chordHtml(root, bass) {
-  const transRoot = transposeNote(root, currentStep.value)
-  const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
+  const transRoot = transposeNote(root, currentStep.value, accidental.value)
+  const transBass = bass ? '/' + transposeNote(bass, currentStep.value, accidental.value) : ''
   return `<strong class="chord" style="color:${chordColor.value};background:color-mix(in oklch, ${chordColor.value} 12%, transparent)">${transRoot}${transBass}</strong>`
 }
 
@@ -961,8 +961,8 @@ const chords = computed(() => {
   for (const line of lines) {
     if (isChordLine(line)) {
       line.replace(chordRegex, (_match, root, bass) => {
-        const transRoot = transposeNote(root, currentStep.value)
-        const transBass = bass ? '/' + transposeNote(bass, currentStep.value) : ''
+        const transRoot = transposeNote(root, currentStep.value, accidental.value)
+        const transBass = bass ? '/' + transposeNote(bass, currentStep.value, accidental.value) : ''
         set.add(transRoot + transBass)
       })
     }
