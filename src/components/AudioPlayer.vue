@@ -134,6 +134,7 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import SpeedSheet from './SpeedSheet.vue'
+import { useAudioPitch } from '../composables/useAudioPitch'
 
 const props = defineProps({
   audioUrl: String,
@@ -142,18 +143,22 @@ const props = defineProps({
   showLab: Boolean,
   loopRange: { type: Object, default: null }, // { from: number, to: number } | null
   scrollDelay: { type: [Number, String], default: 'auto' },
+  semitones: { type: Number, default: 0 },
   showPrev: Boolean,
   showNext: Boolean,
 })
 const emit = defineEmits(['toggleAutoScroll', 'loaded', 'openLab', 'openDelaySheet', 'ended', 'prev', 'next'])
 
 const audioEl = ref(null)
+const pitchedEl = ref(null)
 const playing = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const progress = ref(0)
 const playbackRate = ref(1)
 const showSpeedSheet = ref(false)
+const { attach: attachPitch, detach: detachPitch, setSemitones } = useAudioPitch()
+let pitchToken = 0
 let lastScrolledLine = -1
 const autoDelayValue = ref(0)
 
@@ -176,24 +181,29 @@ const displayTime = computed(() => {
 function togglePlay() {
   if (!audioEl.value) return
   if (playing.value) {
-    audioEl.value.pause()
+    activeEl().pause()
   } else {
     if (props.loopRange) {
-      audioEl.value.currentTime = props.loopRange.from
+      activeEl().currentTime = props.loopRange.from
     }
-    audioEl.value.play()
+    activeEl().play()
   }
   playing.value = !playing.value
 }
 
+function activeEl() {
+  return pitchedEl.value || audioEl.value
+}
+
 function onTimeUpdate() {
-  if (!audioEl.value) return
-  const t = audioEl.value.currentTime
+  const el = activeEl()
+  if (!el) return
+  const t = el.currentTime
   currentTime.value = t
   progress.value = duration.value ? (t / duration.value) * 100 : 0
 
   if (props.loopRange && t >= props.loopRange.to) {
-    audioEl.value.currentTime = props.loopRange.from
+    el.currentTime = props.loopRange.from
     return
   }
 
@@ -230,6 +240,46 @@ function onLoaded() {
   audioEl.value.playbackRate = playbackRate.value
   audioEl.value.preservesPitch = true
   emit('loaded', audioEl.value.duration)
+  applyPitch(props.semitones)
+}
+
+function syncTimeEvents() {
+  if (!audioEl.value || !pitchedEl.value) return
+  pitchedEl.value.ontimeupdate = () => onTimeUpdate()
+  pitchedEl.value.onended = () => onEnded()
+}
+
+function applyPitch(semitones) {
+  if (!audioEl.value) return
+  const token = ++pitchToken
+  const wasPlaying = playing.value && !activeEl().paused
+  activeEl().pause()
+  detachPitch()
+  const previous = pitchedEl.value
+  pitchedEl.value = null
+  if (previous) {
+    previous.ontimeupdate = null
+    previous.onended = null
+    try { previous.pause() } catch { /* best-effort teardown */ }
+    try { previous.removeAttribute('src') } catch { /* best-effort teardown */ }
+  }
+  const resumeTime = audioEl.value.currentTime || 0
+  attachPitch(audioEl.value, semitones)
+    .then(({ attached, element }) => {
+      if (token !== pitchToken || !audioEl.value) return
+      if (!attached || element === audioEl.value) return
+      pitchedEl.value = element
+      syncTimeEvents()
+      audioEl.value.pause()
+      if (wasPlaying) {
+        pitchedEl.value.currentTime = resumeTime
+        pitchedEl.value.play().catch(() => {})
+      }
+    })
+    .catch(() => {
+      if (token !== pitchToken || !audioEl.value) return
+      if (wasPlaying) audioEl.value.play().catch(() => {})
+    })
 }
 
 function onEnded() {
@@ -238,10 +288,11 @@ function onEnded() {
 }
 
 function seek(e) {
-  if (!audioEl.value || !duration.value) return
+  const el = activeEl()
+  if (!el || !duration.value) return
   const rect = e.currentTarget.getBoundingClientRect()
   const x = (e.clientX - rect.left) / rect.width
-  audioEl.value.currentTime = x * duration.value
+  el.currentTime = x * duration.value
 }
 
 function formatTime(t) {
@@ -256,9 +307,27 @@ watch(playbackRate, (rate) => {
     audioEl.value.playbackRate = rate
     audioEl.value.preservesPitch = true
   }
+  if (pitchedEl.value) {
+    pitchedEl.value.playbackRate = rate
+    pitchedEl.value.preservesPitch = true
+  }
+})
+
+watch(() => props.semitones, (semitones) => {
+  if (!audioEl.value) return
+  const active = pitchedEl.value
+  if (active) setSemitones(semitones)
+  if (!semitones) {
+    applyPitch(semitones)
+    return
+  }
+  if (!active) applyPitch(semitones)
 })
 
 watch(() => props.audioUrl, () => {
+  pitchToken += 1
+  detachPitch()
+  pitchedEl.value = null
   playing.value = false
   currentTime.value = 0
   duration.value = 0
@@ -268,6 +337,9 @@ watch(() => props.audioUrl, () => {
 })
 
 onBeforeUnmount(() => {
+  pitchToken += 1
+  detachPitch()
+  pitchedEl.value = null
   if (audioEl.value) {
     audioEl.value.pause()
     audioEl.value.src = ''

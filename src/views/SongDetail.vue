@@ -48,6 +48,7 @@
         :showLab="!!song?.audioKey"
         :loopRange="activeLoopRange"
         :scrollDelay="scrollDelay"
+        :semitones="currentStep"
         :showPrev="showNav && !!prevSongId"
         :showNext="showNav && !!nextSongId"
         @toggleAutoScroll="autoScrolling = !autoScrolling"
