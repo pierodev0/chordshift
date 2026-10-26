@@ -5,28 +5,27 @@ const flats = [
   "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B",
 ]
 
+// The trailing lookahead replaces the old `\b`: a word boundary never fires
+// after `#` (so `F#` used to match as `F`), while letters still stop `Am` from
+// eating the start of "Amigo". `[b#][0-9]+` covers the alterations after a
+// digit (`C7b9`, `Cmaj7#11`), and a parenthesised annotation (`Cadd9(no3)`)
+// is taken whole.
 const chordRegex =
-  /\b([A-G][b#]?(?:maj|min|m|M|aug|dim|sus|add|alt|b5|#5|[0-9]|\+|\-|\(|\))*)(?:\/([A-G][b#]?))?\b/g
+  /\b([A-G][b#]?(?:maj|min|add|dim|aug|sus|alt|[b#][0-9]+|[°ø]|m|M|[0-9]|\+|\-|\([^)]*\))*)(?:\/([A-G][b#]?))?(?![A-Za-z0-9#b])/g
 
 export function useChordTransposer() {
+  function isChordName(text) {
+    const value = String(text || '').trim()
+    if (!value) return false
+    const match = value.match(new RegExp(chordRegex.source))
+    return !!match && match[0] === value
+  }
+
   function isChordLine(line) {
     if (!line.trim()) return false
     const words = line.trim().split(/\s+/)
-    let chordLike = 0
-
-    words.forEach((w) => {
-      const clean = w.replace(/[()]/g, '')
-      if (
-        clean.match(
-          /^[A-G][b#]?(maj|min|m|M|aug|dim|sus|add|alt|b5|#5|[0-9]|\+|\-|\(|\/)*$/,
-        )
-      ) {
-        chordLike++
-      }
-    })
-
-    const hasLongWords = words.some((w) => w.length > 8)
-    return chordLike / words.length > 0.4 && !hasLongWords
+    const chordLike = words.filter(isChordName).length
+    return chordLike / words.length > 0.4
   }
 
   function transposeNote(chordPart, steps, accidental = 'sharps') {
@@ -60,5 +59,5 @@ export function useChordTransposer() {
     )
   }
 
-  return { chordRegex, isChordLine, transposeNote, escapeHTML }
+  return { chordRegex, isChordLine, isChordName, transposeNote, escapeHTML }
 }

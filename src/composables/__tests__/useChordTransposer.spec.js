@@ -9,9 +9,19 @@ describe('isChordLine', () => {
     expect(isChordLine('Fmaj7  Cadd9  Bb  G#m')).toBe(true)
   })
 
+  it('reconoce líneas con bajadas, sostenidos largos y anotaciones', () => {
+    expect(isChordLine('C/G  D')).toBe(true)
+    expect(isChordLine('F#  C#  A#')).toBe(true)
+    expect(isChordLine('Fmaj7add11  C')).toBe(true)
+    expect(isChordLine('Cmaj7(no3)  Dm9')).toBe(true)
+    expect(isChordLine('| G   D   |   C   Em  |')).toBe(true)
+    expect(isChordLine('Am  F  C  G  (x2)')).toBe(true)
+  })
+
   it('rejects lyric and empty lines', () => {
     expect(isChordLine('Hello world this is a lyric line')).toBe(false)
     expect(isChordLine('')).toBe(false)
+    expect(isChordLine('Capo 2')).toBe(false)
   })
 })
 
@@ -52,6 +62,14 @@ describe('chordRegex', () => {
     const result = 'Fmaj7  Cadd9  Bb  G#m'.match(chordRegex)
     expect(result).not.toBeNull()
     expect(result).toHaveLength(4)
+  })
+
+  it('matchea la alteración final en lugar de cortarla', () => {
+    const all = (text) => [...text.matchAll(new RegExp(chordRegex.source, 'g'))].map((m) => m[0])
+    expect(all('F# C# A#')).toEqual(['F#', 'C#', 'A#'])
+    expect(all('C7b9 Cmaj7#11 C7#9')).toEqual(['C7b9', 'Cmaj7#11', 'C7#9'])
+    expect(all('F#/A# D/F#')).toEqual(['F#/A#', 'D/F#'])
+    expect(all('C/G Bb/C Cm(maj7) Cadd9(no3)')).toEqual(['C/G', 'Bb/C', 'Cm(maj7)', 'Cadd9(no3)'])
   })
 })
 

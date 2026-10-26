@@ -266,7 +266,15 @@
             <ChordLegend :chords="chords" />
           </div>
 
-          <div class="font-mono text-sm sm:text-base lg:text-lg leading-loose whitespace-pre-wrap" v-html="renderedHtml" />
+          <div class="font-mono text-sm sm:text-base lg:text-lg leading-loose whitespace-pre-wrap">
+            <div v-for="line in renderedLines" :id="'line-' + line.index" :key="line.index" class="song-line" :class="line.kind === 'chorded' ? 'has-chords' : ''">
+              <template v-if="line.kind === 'section'">[{{ line.label }}]</template>
+              <template v-else-if="line.kind === 'chords'"><span class="chord-row"><strong v-for="(c, j) in line.labels" :key="j" class="chord" :style="chordStyle">{{ c }}</strong></span></template>
+              <template v-else-if="line.kind === 'chorded'"><span v-for="(seg, j) in line.segments" :key="j"><span v-if="seg.labels.length" class="chord-anchor"><span class="chord-row"><strong v-for="(c, k) in seg.labels" :key="k" class="chord" :style="chordStyle">{{ c }}</strong></span></span>{{ seg.text }}</span></template>
+              <span v-else-if="line.kind === 'lyric'">{{ line.text }}</span>
+              <span v-else>&nbsp;</span>
+            </div>
+          </div>
 
           <div class="pb-24">
             <AppButton full size="lg" :disabled="countedThisVisit" @click="markAsPlayed">
@@ -432,7 +440,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSongsStore } from '../stores/songsStore'
 import { usePlaylistsStore } from '../stores/playlistsStore'
-import { useChordTransposer } from '../composables/useChordTransposer'
+import { parseSongContent, transposeChord, padSegmentsForChords } from '../utils/chordpro'
 import { useAudioCache } from '../composables/useAudioCache'
 import { usePreferences } from '../composables/usePreferences'
 import AppPageHeader from '../components/AppPageHeader.vue'
@@ -448,7 +456,7 @@ import ScrollDelaySheet from '../components/ScrollDelaySheet.vue'
 import { extractYoutubeId } from '../utils/youtube'
 import SectionNavSheet from '../components/SectionNavSheet.vue'
 
-const { chordRegex, isChordLine, transposeNote, escapeHTML } = useChordTransposer()
+
 const { loadAudio, deleteAudio } = useAudioCache()
 const { accidental, chordColor } = usePreferences()
 
@@ -820,23 +828,44 @@ onBeforeUnmount(() => {
   if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
 })
 
-const totalLines = computed(() => song.value?.content.split('\n').length || 0)
+const songLines = computed(() => (song.value ? parseSongContent(song.value.content) : []))
+
+// Chords are labels on segments, padded so every label fits over its own
+// fragment (Campfire's method), rebuilt whenever the transposition changes.
+const displayLines = computed(() =>
+  songLines.value.map((line) => {
+    if (line.kind === 'chorded') {
+      return { ...line, segments: padSegmentsForChords(line.segments, transposedChord) }
+    }
+    if (line.kind === 'chords') return { ...line, labels: line.chords.map(transposedChord) }
+    return line
+  }),
+)
+
+const renderedLines = computed(() => {
+  const out = []
+  displayLines.value.forEach((line, index) => {
+    if (lineIsVisible(index)) out.push({ ...line, index })
+  })
+  return out
+})
+
+const totalLines = computed(() => songLines.value.length || 0)
 
 // --- Sections ---
 const sections = computed(() => {
   if (!song.value) return []
-  const lines = song.value.content.split('\n')
+  const lines = songLines.value
   const result = []
   let currentLabel = 'Intro'
   let start = 0
 
   for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(/^\[(.+)\]$/)
-    if (match) {
+    if (lines[i].kind === 'section') {
       if (i > start) {
         result.push({ id: `sec-${result.length}`, label: currentLabel, start, count: i - start })
       }
-      currentLabel = match[1]
+      currentLabel = lines[i].label
       start = i
     }
   }
@@ -876,103 +905,24 @@ const keyText = computed(() =>
     : 'Original → ' + (currentStep.value > 0 ? '+' : '') + currentStep.value,
 )
 
-function chordHtml(root, bass) {
-  const transRoot = transposeNote(root, currentStep.value, accidental.value)
-  const transBass = bass ? '/' + transposeNote(bass, currentStep.value, accidental.value) : ''
-  return `<strong class="chord" style="color:${chordColor.value};background:color-mix(in oklch, ${chordColor.value} 12%, transparent)">${transRoot}${transBass}</strong>`
+const chordStyle = computed(() => ({
+  color: chordColor.value,
+  background: `color-mix(in oklch, ${chordColor.value} 12%, transparent)`,
+}))
+
+function transposedChord(chord) {
+  return transposeChord(chord, currentStep.value, accidental.value)
 }
-
-function parseChords(line) {
-  const result = []
-  const re = new RegExp(chordRegex.source, 'g')
-  let m
-  while ((m = re.exec(line)) !== null) {
-    result.push({ col: m.index, html: chordHtml(m[1], m[2]) })
-  }
-  return result
-}
-
-function renderChordLine(line) {
-  return line.replace(chordRegex, (match, root, bass) =>
-    root === undefined
-      ? `<strong class="chord" style="color:${chordColor.value}">${escapeHTML(match)}</strong>`
-      : chordHtml(root, bass),
-  )
-}
-
-// Render a lyric line with its chord line folded in: each chord is absolutely
-// anchored above the lyric character at its source column, so chords and lyrics
-// remain aligned even when the lyric line wraps on narrow screens.
-function renderLyricWithChords(lyric, chords) {
-  let out = ''
-  let pos = 0
-  for (const c of chords) {
-    let target = c.col
-    if (target > lyric.length) target = lyric.length
-    if (target < pos) target = pos
-    out += escapeHTML(lyric.slice(pos, target))
-    out += `<span class="chord-anchor">${c.html}</span>`
-    pos = target
-  }
-  out += escapeHTML(lyric.slice(pos))
-  return out
-}
-
-const cachedHtml = computed(() => {
-  if (!song.value) return []
-  const lines = song.value.content.split('\n')
-  const out = []
-  let pendingChords = null
-
-  lines.forEach((line, i) => {
-    const next = lines[i + 1]
-    const nextIsLyric =
-      !!next && next.trim() !== '' && !isChordLine(next) && !/^\[.+\]$/.test(next)
-
-    if (pendingChords) {
-      out.push(renderLyricWithChords(line, pendingChords))
-      pendingChords = null
-      return
-    }
-
-    if (isChordLine(line)) {
-      if (nextIsLyric) {
-        pendingChords = parseChords(line)
-        out.push('<span class="chord-spacer"></span>')
-      } else {
-        out.push(renderChordLine(line))
-      }
-      return
-    }
-
-    out.push(escapeHTML(line))
-  })
-
-  if (pendingChords) out.push('<span class="chord-spacer"></span>')
-  return out
-})
-
-const renderedHtml = computed(() => {
-  if (!cachedHtml.value.length) return ''
-  return cachedHtml.value
-    .map((processed, i) => {
-      if (!lineIsVisible(i)) return ''
-      return `<div id="line-${i}">${processed}</div>`
-    })
-    .join('')
-})
 
 const chords = computed(() => {
-  if (!song.value) return []
   const set = new Set()
-  const lines = song.value.content.split('\n')
-  for (const line of lines) {
-    if (isChordLine(line)) {
-      line.replace(chordRegex, (_match, root, bass) => {
-        const transRoot = transposeNote(root, currentStep.value, accidental.value)
-        const transBass = bass ? '/' + transposeNote(bass, currentStep.value, accidental.value) : ''
-        set.add(transRoot + transBass)
-      })
+  for (const line of songLines.value) {
+    if (line.kind === 'chords') {
+      for (const chord of line.chords) set.add(transposedChord(chord))
+    } else if (line.kind === 'chorded') {
+      for (const segment of line.segments) {
+        for (const chord of segment.chords) set.add(transposedChord(chord))
+      }
     }
   }
   return [...set]
@@ -1065,31 +1015,38 @@ onMounted(() => {
   padding: 0.05em 0.3em;
 }
 
-/* Keeps the source line index stable while rendering no extra height when its
-   chords are folded into the following lyric line. */
-.chord-spacer {
-  display: block;
-  height: 0;
+/* Campfire's method: one monospaced text flow per line, with every chord
+   hanging above the character it is attached to. The anchor is a zero-width
+   inline-block whose bottom edge sits on the baseline, so its label rides that
+   character through wraps and lands exactly on the source column; its height
+   reserves the band the label draws in, and `.has-chords` gives that band
+   room on every visual row. */
+.chord-row {
+  display: flex;
+  gap: 0.35em;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
-/* Zero-size inline anchor: holds each chord in the lyric text flow without
-   affecting width or wrapping, so the chord always sits above the character
-   at its source column even when the lyric line wraps. */
 .chord-anchor {
   position: relative;
   display: inline-block;
   width: 0;
-  height: 0;
-  overflow: visible;
-  vertical-align: text-bottom;
-  line-height: 0;
+  height: 2em;
+  vertical-align: baseline;
 }
 
-.chord-anchor .chord {
+.chord-anchor .chord-row {
   position: absolute;
   left: 0;
-  top: 0;
-  transform: translateY(-1.7em);
+  bottom: 0.7em;
+  display: flex;
+  gap: 0.35em;
+  line-height: 1.15;
   white-space: nowrap;
+}
+
+.song-line.has-chords {
+  line-height: 2.4;
 }
 </style>
