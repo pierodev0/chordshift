@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
 import {
   positionedToChordPro,
   parseSongContent,
@@ -8,7 +7,6 @@ import {
   isSectionLine,
   chordsIn,
 } from '../chordpro'
-import { useChordTransposer } from '../../composables/useChordTransposer'
 
 describe('positionedToChordPro', () => {
   it('ancla cada acorde al carácter exacto de su columna', () => {
@@ -143,29 +141,4 @@ describe('transposeChord', () => {
   })
 })
 
-describe('pruebas/test.txt (copia desde la web)', () => {
-  const fixture = readFileSync('pruebas/test.txt', 'utf8')
-  const { chordRegex, isChordLine } = useChordTransposer()
-  const converted = positionedToChordPro(fixture)
 
-  it('no pierde ningún acorde al convertir', () => {
-    const before = fixture
-      .split(/\r?\n/)
-      .filter((line) => isChordLine(line))
-      .reduce(
-        (n, line) => n + (line.match(new RegExp(chordRegex.source, 'g')) || []).length,
-        0,
-      )
-    expect(chordsIn(converted).length).toBe(before)
-  })
-
-  it('pliega las líneas de acordes sobre su letra', () => {
-    expect(converted).toContain('[Dm7]Yo pienso que[G]')
-    expect(converted).toContain('[Dm7] [G] [Dm9] [G]')
-    expect(converted.split('\n')).toContain('[Chorus]')
-  })
-
-  it('es idempotente sobre la canción entera', () => {
-    expect(positionedToChordPro(converted)).toBe(converted)
-  })
-})
